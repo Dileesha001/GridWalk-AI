@@ -2,7 +2,7 @@
 
 Scope: implement the Jac Monitor, Planner, and Auditor walkers, typed recovery proposals, bounded AI calls, recovery orchestration, factual events, and final results. Member 1 owns graph arithmetic, validation, approved application, and deterministic fallback candidate generation. Member 3 owns the dashboard and client adapter. The governing rule is: **AI proposes; deterministic Jac code validates; the simulation engine applies.**
 
-Member 1's validator and approved-plan application are merged. The Jac 0.34.13 migration is merged, and Member 2 Step 4 has fixed-proposal runtime coverage plus one successful live Gemini line-fault recovery. Step 5 adds the Auditor and event/result API on a branch stacked over Step 4; runtime polling and dashboard integration remain unverified. Fallback remains future work. Do not claim an end-to-end dashboard recovery yet.
+Member 1's validator and approved-plan application are merged. The Jac 0.34.13 migration and Member 2 Steps 4–5 are merged; Step 4 has fixed-proposal runtime coverage and one successful live Gemini line-fault recovery. Step 5 adds the Auditor and event/result API, but runtime polling and dashboard integration remain unverified. Step 6 adds bounded Gemini/Groq routing; deterministic fallback awaits Member 1. Do not claim an end-to-end dashboard recovery yet.
 
 ## Branch workflow
 
@@ -15,8 +15,8 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 | 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | Merged; line-fault observations exercised through Step 4 |
 | 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | Merged; live Gemini proposal repeated on Jac 0.34.13 |
 | 4 | `member2/04-validation-revision` and `member2/04b-orchestration-runtime` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | Fixed paths passed 8/8; one live line-fault plan validated and applied; 04b branch ready for PR |
-| 5 | `member2/05-auditor-events` | Auditor, ordered events, final result and read API | Task 4; Member 3 envelope agreement | Implemented on stacked branch; Jac compile passed; runtime and Member 3 handoff pending |
-| 6 | `member2/06-fallback-budgets` | Request budgets, backup provider, deterministic fallback handling | Tasks 4–5; tested provider access | To do |
+| 5 | `member2/05-auditor-events` | Auditor, ordered events, final result and read API | Task 4; Member 3 envelope agreement | Merged; Jac compile passed; runtime polling and Member 3 integration pending |
+| 6 | `member2/06-fallback-budgets` | Request budgets, backup provider, deterministic fallback handling | Tasks 4–5; tested provider access | Gemini/Groq routing and budgets implemented; deterministic candidate awaits Member 1; live backup unverified |
 | 7 | `member2/07-scenario-integration` | Three scenario handoff and failure-path evidence | Members 1 and 3 integrations | To do |
 
 ## 1. Shared recovery contracts
@@ -69,8 +69,8 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 
 ## Immediate handoffs
 
-1. **Member 1:** validation and approved application are integrated. Deterministic fallback candidate generation remains Member 1's handoff for Task 6.
+1. **Member 1:** validation and approved application are integrated. Provide the non-mutating deterministic fallback candidate described in [Step 6 handoff](MEMBER_2_FALLBACK_BUDGETS.md); its generation remains Member 1's responsibility.
 2. **Member 3:** review the proposed polling and result contract in [Step 5 handoff](MEMBER_2_AUDITOR_EVENTS.md), then integrate it into the dashboard. Client busy and stale-response behavior still need integration.
-3. **Provider access:** Gemini typed output and one accepted line-fault run passed on Jac 0.34.13. Confirm whether a separate backup provider can be tested for Task 6. Keep keys outside the repository.
+3. **Provider access:** Gemini typed output and one accepted line-fault run passed on Jac 0.34.13 before Step 6. Groq backup is wired but awaits a saved local `GROQ_API_KEY` and live access check. Keep keys outside the repository.
 
 For every branch handoff, report changed files, exact checks run, fixture and execution mode used, observed result, limitations, and the next dependency. A compiler pass alone does not prove provider calls or a recovery outcome.
