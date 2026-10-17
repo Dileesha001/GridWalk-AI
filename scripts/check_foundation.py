@@ -1,4 +1,4 @@
-"""Run Jac client tests with sibling modules preserved (Jac 0.16.7 workaround)."""
+"""Run client regressions through `jac run`, preserving sibling test modules."""
 
 import json
 from pathlib import Path
@@ -7,14 +7,15 @@ import sys
 
 import jaclang  # Registers Jac's import machinery.
 from jaclang.runtimelib.cl_test_runner import compile_cl_module
+from jaclang.runtimelib.client.bun_installer import get_bun
 
 
 def main():
     root = Path(__file__).resolve().parents[1]
     build = root / ".jac" / "foundation-tests"
     build.mkdir(parents=True, exist_ok=True)
-    bun = root / ".jac" / "bin" / ("bun.exe" if sys.platform == "win32" else "bun")
-    if not bun.is_file():
+    bun = get_bun()
+    if not bun:
         raise SystemExit("Run jac install first to install the project-local Bun runtime.")
 
     suite = sys.argv[1] if len(sys.argv) > 1 else "foundation"

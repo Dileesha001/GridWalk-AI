@@ -23,19 +23,19 @@ Agree the graph projection, recovery plan/action schema, validation feedback, ev
 
 ## Local setup
 
-Verified on Windows with Python 3.14.7, Jac 0.16.7, and jac-client 0.3.25. From the repository root:
+The required build environment is **Jac 0.34.13 in WSL 2**. See [WSL setup and verification](docs/WSL_Setup.md) for the pinned installer, source sync, and exact commands.
 
-```powershell
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install jaclang==0.16.7 jac-client==0.3.25
-.venv/Scripts/jac.exe install
-.venv/Scripts/jac.exe start --dev main.jac --port 8001
+Inside WSL, from the Linux build copy:
+
+```bash
+jac --version
+jac install
+bash scripts/verify_wsl.sh
+jac start main.jac --port 8011
 ```
 
-Open `http://localhost:8001`. Development mode recompiles changed client modules and uses port 8002 for the API. Installation requires network access, and the client build requires access to Bun's dependency cache. The console was compiled, served, and inspected in Chrome at desktop, tablet, and phone widths. This verifies the preview; it does not verify end-to-end recovery or deployment.
+Open `http://localhost:8011` in the Windows browser. Keep Linux build dependencies separate from the old Windows `.venv/` and `.jac/`. After editing the Windows repository, sync its source into the Linux build copy before checking again. The earlier Windows Jac 0.16.7 instructions are superseded.
 
-To check the built app, stop the dev server first, then run `.venv/Scripts/jac.exe build main.jac` and `.venv/Scripts/jac.exe start main.jac --port 8001`. On Windows a running dev server can lock esbuild during a build. With a local server running, `.venv/Scripts/python.exe scripts/verify_console.py` checks asset/font loading, responsive overflow, bus and keyboard inspection, all four fixed snapshots, fault retention, reduced motion, and the skip link. It uses the installed Jac browser engine and Chrome; set `JACBROWSER_CHROME` if needed.
-
-Run topology checks with `.venv/Scripts/python.exe scripts/check_foundation.py topology`. See [topology preview notes](docs/Topology_Preview.md) for the display states and limitations.
+The checks cover client syntax/types, foundation and topology regressions, simulation regressions, the web shell, and the sealed app artifact. Browser verification covers the preview; it does not establish end-to-end recovery or deployment. See [topology preview notes](docs/Topology_Preview.md) for display states and limitations.
 
 See [progress and checks](docs/Member_3_Progress.md) for historical milestones and the [design review](docs/Design_Review.md) for current checks and limitations.

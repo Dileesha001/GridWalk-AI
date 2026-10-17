@@ -10,7 +10,7 @@ def:pub ConsoleSidebar(compact: bool, onPreview: Callable[[str], None]) -> JsxEl
                 <a href="#activity" style={s("navItem")}>02  Planner<p style={s("navSmall")}>Propose a plan</p></a>
                 <a href="#activity" style={s("navItem")}>03  Auditor<p style={s("navSmall")}>Explain the result</p></a>
             </nav>;
-            <nav key="scenarios" aria-label="Preview scenarios"><p style={s("navHeading")}>TEST SCENARIOS</p><button style={s("navScenario")} onClick={lambda e: MouseEvent { onPreview("source_fault"); }}>Source capacity</button><button style={s("navScenario")} onClick={lambda e: MouseEvent { onPreview("line_fault"); }}>Line failure</button><button style={{**s("navScenario"), "opacity": 0.6, "cursor": "not-allowed"}} disabled={True} title="Available after live scenario integration">Backup shortage</button><p style={s("navSmall")}>Fixed display examples</p></nav>;
+            <nav key="scenarios" aria-label="Preview scenarios"><p style={s("navHeading")}>TEST SCENARIOS</p><button style={s("navScenario")} onClick={lambda (e: MouseEvent) { onPreview("source_fault"); }}>Source capacity</button><button style={s("navScenario")} onClick={lambda (e: MouseEvent) { onPreview("line_fault"); }}>Line failure</button><button style={{**s("navScenario"), "opacity": 0.6, "cursor": "not-allowed"}} disabled={True} title="Available after live scenario integration">Backup shortage</button><p style={s("navSmall")}>Fixed display examples</p></nav>;
             <div key="simulation" style={{"marginTop": "auto", "paddingTop": 48}}><p style={s("navSmall")}>Simulation only</p><p style={s("navSmall")}>12 buses · 3 sources</p><p style={s("navSmall")}>9 loads · Built with Jac</p></div>;
         }}
     </aside>;
