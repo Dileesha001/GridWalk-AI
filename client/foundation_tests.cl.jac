@@ -85,3 +85,22 @@ test "live recovery cannot claim preview mode" {
     except Exception { rejected = True; }
     assert rejected;
 }
+
+test "Jac function envelopes return data result rather than the wrapper" {
+    for value in [0, False, None, "sample"] {
+        result = unwrap({"ok": True, "data": {"result": value, "reports": []}});
+        assert result == value;
+    }
+    raw: any = JSON.parse(JSON.stringify(preview_grid()));
+    decoded = grid_value(unwrap({"ok": True, "data": {"result": raw, "reports": []}}));
+    assert len(decoded.sources) == 3;
+}
+
+test "missing function result is rejected instead of accepting a broken envelope" {
+    for payload in [{"reports": []}, None, "invalid"] {
+        rejected = False;
+        try { _ = unwrap({"ok": True, "data": payload}); }
+        except Exception { rejected = True; }
+        assert rejected;
+    }
+}

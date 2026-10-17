@@ -33,5 +33,11 @@ base_route_app = "app"
 
 [plugins.client]
 
+[plugins.client.app_meta_data]
+title = "GridWalk AI · Recovery console"
+description = "Fictional microgrid recovery console with inspectable fixed display snapshots."
+theme_color = "#102b30"
+icon = "data:,"
+
 [plugins.byllm.model]
 default_model = "gemini/gemini-3.8-flash"
