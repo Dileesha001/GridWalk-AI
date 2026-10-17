@@ -1,8 +1,8 @@
 """Validate the canonical server projection without calculating recovery outcomes."""
-sv import from ..shared.contracts { GraphState }
+sv import from ..shared.contracts { GraphState, GridMetrics }
 import from .decode { object_value, text, number, integer, flag, array }
 
-def identity(data: dict[str, any], key: str) -> str {
+def:pub identity(data: dict[str, any], key: str) -> str {
     value = text(data, key);
     if not value { raise ValueError("Empty server identity: " + key); }
     return value;
@@ -59,10 +59,20 @@ def:pub decode_grid(raw: any) -> GraphState {
         if not isinstance(fault_id, str) or not fault_id or fault_id in faults { raise ValueError("Invalid active fault ID."); }
         faults.append(fault_id as str);
     }
-    metrics = object_value(data["metrics"]);
+    metrics = decode_metrics(data["metrics"]);
+    if metrics.active_fault_count != len(faults) { raise ValueError("Inconsistent active fault count."); }
+    return data as GraphState;
+}
+
+def:pub decode_metrics(raw: any) -> GridMetrics {
+    metrics = object_value(raw);
     for key in ["total_demand_kw", "served_kw", "unmet_kw", "shed_kw", "available_capacity_kw", "dispatched_kw"] { number(metrics, key); }
-    if integer(metrics, "active_fault_count") != len(faults) { raise ValueError("Inconsistent active fault count."); }
+    integer(metrics, "active_fault_count");
     if "critical_preserved_pct" not in metrics { raise ValueError("Missing critical demand percentage."); }
     if metrics["critical_preserved_pct"] is not None and number(metrics, "critical_preserved_pct") > 100 { raise ValueError("Invalid critical demand percentage."); }
-    return data as GraphState;
+    return metrics as GridMetrics;
+}
+
+def:pub same_metrics(left: GridMetrics, right: GridMetrics) -> bool {
+    return left.total_demand_kw == right.total_demand_kw and left.served_kw == right.served_kw and left.unmet_kw == right.unmet_kw and left.shed_kw == right.shed_kw and left.available_capacity_kw == right.available_capacity_kw and left.dispatched_kw == right.dispatched_kw and left.critical_preserved_pct == right.critical_preserved_pct and left.active_fault_count == right.active_fault_count;
 }

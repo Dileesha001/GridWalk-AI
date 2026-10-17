@@ -1,6 +1,6 @@
 # GridWalk AI
 
-Jac-first microgrid recovery decision-support simulator. The dashboard reads live grid state and supports three repeatable fault scenarios and reset. Recovery orchestration is not yet connected to the dashboard.
+Jac-first microgrid recovery decision-support simulator. The dashboard reads live grid state, supports three repeatable fault scenarios and reset, and connects recovery orchestration with ordered agent evidence and measured incident results.
 
 ## Layout
 
@@ -15,9 +15,9 @@ Jac-first microgrid recovery decision-support simulator. The dashboard reads liv
 
 The dashboard follows the healthy Figma recovery console, using Jac components and style dictionaries with locally bundled design assets and fonts. It starts in **Live simulation** mode: topology, supply, and metrics come from the canonical server projection. Choose a fault scenario, inject it, inspect the result, and reset before trying another scenario. Each mutation is followed by a fresh server read. Duplicate submissions are blocked; a failed confirmation keeps the last confirmed state and requires refresh before another change.
 
-**Fixed previews** remain available separately, including rerouting with shedding. Changing a preview does not call the simulator or agents. Click a bus or use the component selector to inspect capacity/dispatch, priority/service, and independent physical-fault/switch states. Agent activity remains an explicit empty state and Run recovery is disabled.
+**Fixed previews** remain available separately, including rerouting with shedding. Changing a preview does not call the simulator or agents. Click a bus or use the component selector to inspect capacity/dispatch, priority/service, and independent physical-fault/switch states. In live mode, inject a fault and choose Run recovery. Confirmed events appear when the synchronous server request finishes; the console does not invent intermediate progress.
 
-See the [implementation order and current task statuses](docs/Dashboard_Implementation_Status.md) and [live simulation verification](docs/Live_Grid_Integration.md). Remaining recovery workflow screens and orchestration integration are pending.
+See the [implementation order and current task statuses](docs/Dashboard_Implementation_Status.md), [live simulation verification](docs/Live_Grid_Integration.md), and [recovery integration checks](docs/Recovery_Integration.md). Fresh browser verification and live-provider recovery verification remain pending.
 
 ## Next integration decisions
 

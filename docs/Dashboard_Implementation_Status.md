@@ -11,12 +11,12 @@ live simulation or recovery is connected.
 | 4 | Dashboard shell | Done for the healthy Figma console. Presentation is authored in Jac; responsive browser checks pass. |
 | 5 | Read-only topology and inspection | Done. Four fixed snapshots, twelve buses, component/line inspection, retained physical faults, and six topology runtime tests. |
 | 6 | Live grid reads, fault/reset controls, and measured metrics | Done locally. Canonical payload validation, all three fault scenarios, reset, fresh reads, server metrics, and separate fixed previews. Reset persistence regression fixed and checked over HTTP. See [verification](Live_Grid_Integration.md). |
-| 7 | Recovery controls, ordered events, and incident outcomes | Next. Consume actual recovery orchestration, run IDs, event sequence, execution mode, and before/after results. Match the remaining Figma screens without inventing events. |
+| 7 | Recovery controls, ordered events, and incident outcomes | Implemented locally. Canonical orchestration, correlated ordered events, execution mode, committed actions, and before/after measurements are connected. Deterministic runtime and HTTP checks pass; fresh browser and live-provider verification remain pending. See [recovery integration](Recovery_Integration.md). |
 | 8 | Busy, rejection, revision, error, fallback, and stale-response handling | Partly covered for grid controls: duplicate clicks, request timeout, unmount response guards, retained last-confirmed state, and refresh recovery. Recovery-run concurrency, stale revisions, and fallback behavior remain pending. |
 | 9 | End-to-end scenarios and performance/accessibility verification | Partly covered: live fault/reset browser flows and responsive layouts pass; preview keyboard/reduced-motion checks pass. Full recovery workflows and measured performance remain pending. No FPS claim is made. |
 | 10 | Final run instructions, optional deployment, demo, and submission artifacts | Pending final verification. Local setup instructions already exist; hosting is not verified. |
 
-The current checkpoint completes Step 6 and preserves the fixed preview workflow.
+The current checkpoint connects Step 7 and preserves the fixed preview workflow.
 See [live integration verification](Live_Grid_Integration.md) for the current
 checks, and [design review](Design_Review.md) for the earlier Figma console work.
 

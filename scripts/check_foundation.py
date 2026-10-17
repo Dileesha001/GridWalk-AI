@@ -23,9 +23,10 @@ def main():
         "foundation": ("models", "preview", "decode"),
         "topology": ("models", "topology_examples", "topology_layout"),
         "live_grid": ("models", "decode", "topology_examples", "grid_decode", "network_geometry"),
+        "recovery": ("models", "decode", "topology_examples", "grid_decode", "recovery_decode"),
     }
     if suite not in suites:
-        raise SystemExit("Usage: check_foundation.py [foundation|topology|live_grid]")
+        raise SystemExit("Usage: check_foundation.py [foundation|topology|live_grid|recovery]")
     modules = suites[suite]
     for name in modules:
         source, _, _, _ = compile_cl_module(str(root / "client" / f"{name}.cl.jac"))
