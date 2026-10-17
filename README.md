@@ -13,7 +13,7 @@ Jac-first microgrid recovery decision-support simulator. The project is currentl
 | `shared/contracts.jac` | Shared | One authoritative location for ratified typed contracts |
 | `docs/` | Team | Development guide, agent guidelines, member handoffs |
 
-The current dashboard is a shell and does not show simulated values. The Jac files in `grid/`, `agents/`, and `shared/` mark ownership boundaries; their interfaces and behavior still need to be implemented.
+The current dashboard is a responsive layout with metric placeholders, topology and activity empty states, disabled scenario controls, and an incident section. It explicitly shows that no server is connected and does not show simulated values. The Jac files in `grid/`, `agents/`, and `shared/` mark ownership boundaries; their interfaces and behavior still need to be implemented.
 
 ## Next integration decisions
 
@@ -21,4 +21,15 @@ Agree the graph projection, recovery plan/action schema, validation feedback, ev
 
 ## Local setup
 
-The scaffold was based on Jac 0.16.7's `fullstack` template. Install Jac and its client plugin in the development environment, then run `jac install` and `jac start --dev main.jac` from the repository root. Package installation and the live app have not yet been verified in this workspace.
+Verified on Windows with Python 3.14.7, Jac 0.16.7, and jac-client 0.3.25. From the repository root:
+
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install jaclang==0.16.7 jac-client==0.3.25
+.venv/Scripts/jac.exe install
+.venv/Scripts/jac.exe start main.jac --port 8001
+```
+
+Open `http://localhost:8001`. Installation requires network access, and the client build requires access to Bun's dependency cache. The shell was built, served, and inspected in Chrome at desktop, tablet, and phone widths. This verifies the layout; it does not verify backend operations or deployment.
+
+See [Member 3 progress and checks](docs/Member_3_Progress.md) for the tested foundation and current integration limits.

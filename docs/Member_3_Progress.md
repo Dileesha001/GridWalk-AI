@@ -52,9 +52,36 @@ Runtime tests caught and fixed missing client exports, positional construction o
 client objects, and the difference between plain JSON objects and Jac's dictionary
 runtime type. Passing these tests does not verify backend arithmetic or safety.
 
-## Next milestone
+## Step 4: responsive dashboard shell — complete
 
-Build and visually verify the dashboard shell, topology, metrics, controls, and
-activity views using preview data. Then ratify backend fields/routes, event
-delivery, version checks, duplicate requests, and reset semantics before enabling
-live integration. Deployment and all three end-to-end scenarios remain pending.
+`client/Dashboard.cl.jac`, `client/ShellPanel.cl.jac`, and `client/dashboard.css`
+provide the header and section navigation, metric placeholders, topology area,
+disabled scenario controls, activity empty state, and incident empty state.
+The shell explicitly says "Layout preview" and "Not connected". No preview
+numbers, fake activity, or live operations are wired into this milestone.
+
+Verified with:
+
+```powershell
+.venv/Scripts/jac.exe check main.jac client/Dashboard.cl.jac client/ShellPanel.cl.jac -n
+.venv/Scripts/jac.exe start main.jac --port 8001
+```
+
+All three static checks passed. The client bundle built successfully and served
+at `http://localhost:8001`. Chrome CDP viewport checks at 1440, 1024, 768, and 375
+pixels confirmed no horizontal overflow, four panels, three disabled action
+buttons, a disabled scenario selector, and valid description links. Desktop,
+tablet, and phone screenshots were inspected. The keyboard skip link focuses the
+main workspace; reduced-motion removes transitions; the browser console was clean.
+Screenshots and temporary browser verification output live under ignored `.jac/`.
+
+No changes were made to Members 1/2's modules. Draft components and the draft
+adapter for later steps remain separate from the shell's imports.
+
+## Next: Step 5
+
+Implement and verify the topology with labeled sources, loads, physical faults,
+and switch states, using clearly labeled preview snapshots. Then complete controls,
+metrics, activity and incident views, ratify backend fields/routes and concurrency
+semantics, and enable live integration. Deployment and all three end-to-end
+scenarios remain pending.
