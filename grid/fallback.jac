@@ -71,7 +71,7 @@ def _plan(grid: Grid, switches: list[str], sheds: list[str]) -> RecoveryPlan {
 
 
 """Propose for the observed snapshot, or None if stale or infeasible."""
-def generate_fallback_plan(observed: GraphState) -> RecoveryPlan | None {
+def deterministic_fallback_plan(observed: GraphState) -> RecoveryPlan | None {
     grids = [root -->[?:Grid]];
     if len(grids) != 1 { return None; }
     grid = grids[0];
@@ -119,4 +119,10 @@ def generate_fallback_plan(observed: GraphState) -> RecoveryPlan | None {
         return None;
     }
     return best;
+}
+
+
+"""Keep the original Task 6 handoff name for existing Jac consumers."""
+def generate_fallback_plan(observed: GraphState) -> RecoveryPlan | None {
+    return deterministic_fallback_plan(observed);
 }

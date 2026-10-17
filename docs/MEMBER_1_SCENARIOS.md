@@ -4,7 +4,7 @@ The fixed Jac test proposals in this document are deterministic simulation data,
 
 ## Fallback interface
 
-`grid/fallback.jac` exports `generate_fallback_plan(observed: GraphState) -> RecoveryPlan | None` for Member 2. Pass the `GraphState` observed for the current fault. The function returns `None` for a healthy grid, a changed generation/revision/fault, an already committed allocation, or when no validator-accepted proposal exists. It never mutates graph state.
+`grid/fallback.jac` exports `deterministic_fallback_plan(observed: GraphState) -> RecoveryPlan | None` for Member 2, matching the name requested in the Step 6 handoff. The previously published `generate_fallback_plan` remains as a compatibility wrapper. Pass the `GraphState` observed for the current fault. The function returns `None` for a healthy grid, a changed generation/revision/fault, an already committed allocation, or when no validator-accepted proposal exists. It never mutates graph state.
 
 The generator enumerates closures of healthy open switches and optional noncritical whole-load sheds in stable ID order. The committed fixture has three open ties and five noncritical loads, so it examines at most 256 action sets. Each nonempty action set goes through `validate_plan`. Among accepted plans, it maximizes served kW, then minimizes deliberate shed kW, then action count. This is a bounded search over actions using the existing greedy allocation preview; it does not claim a globally optimal power flow. Unserved demand without a `SHED_LOAD` action is reported as **unmet**, not deliberate shedding.
 
@@ -28,8 +28,14 @@ The insufficient-backup fault reduces total available source capacity to 175 kW,
 
 Jac 0.34.13 in WSL: `jac check grid/ tests/scenario_checks.jac agents/orchestration.jac shared/contracts.jac -n` passed all 10 checked files. `jac test tests/*_checks.jac -v` passed all 43 tests, including seven new scenario checks. The WSL runtime needed the project's declared `python-dotenv` dependency to import Member 2's planner; it was installed with `jac install python-dotenv --no-save --no-npm --no-dev` without changing `jac.toml`.
 
+## Follow-up handoff verification on current `dev`
+
+The Member 2 Step 6 notes requested the name `deterministic_fallback_plan`. Member 1 now exports that exact function, while `generate_fallback_plan` remains a wrapper for existing callers. Both use the same snapshot checks and proposal algorithm; no second fallback implementation was introduced. The line-fault scenario test calls the new name, while the other active-fault tests still exercise the original name.
+
+On Jac 0.34.13 in WSL, `jac check grid/fallback.jac tests/scenario_checks.jac -n` passed both files, `jac test tests/scenario_checks.jac -v` passed 7 tests, and `jac test tests/*_checks.jac -v` passed all 43 server tests. The local WSL test environment initially lacked `litellm`, required when those tests import Member 2's Planner; `jac install litellm --no-save --no-npm --no-dev` installed it locally without changing `jac.toml`. These are fixed-proposal tests, not a live provider or dashboard run.
+
 ## Remaining joint integration
 
-- Member 2: call `generate_fallback_plan` after provider options fail or exhaust, revalidate and apply only a current accepted plan, label the deterministic mode, and test budgets/events.
+- Member 2: call `deterministic_fallback_plan` after provider options fail or exhaust, revalidate and apply only a current accepted plan, label the deterministic mode, and test budgets/events.
 - Member 3: consume authoritative state, fault/reset, recovery result, and ordered events in live controls. The read-only preview does not prove this path.
 - Joint run: verify the same three metrics and retained faults in the dashboard, including a no-candidate failure, reset, and duplicate requests.
