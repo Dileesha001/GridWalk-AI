@@ -112,7 +112,8 @@ def _project(grid: Grid) -> GraphState {
     active_fault_ids: list[str] = [];
     if grid.active_fault_id != "" { active_fault_ids.append(grid.active_fault_id); }
     return GraphState(
-        grid_id=grid.grid_id, revision=grid.revision, active_fault_ids=active_fault_ids,
+        grid_id=grid.grid_id, generation_id=grid.generation_id,
+        revision=grid.revision, active_fault_ids=active_fault_ids,
         sources=source_views, loads=load_views, lines=line_views,
         metrics=compute_metrics(source_views, load_views, line_views, active_fault_ids)
     );

@@ -2,6 +2,7 @@
 
 node Grid {
     has grid_id: str;
+    has generation_id: str;
     has revision: int = 0;
     has active_fault_id: str = "";
 }

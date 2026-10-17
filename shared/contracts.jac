@@ -49,6 +49,7 @@ obj GridMetrics {
 
 obj GraphState {
     has grid_id: str;
+    has generation_id: str;
     has revision: int;
     has active_fault_ids: list[str];
     has sources: list[SourceView];
@@ -75,6 +76,7 @@ sem RecoveryAction.target_id = "Use a stable LOAD-* bus ID for SHED_LOAD or SW-*
 
 obj RecoveryPlan {
     has fault_id: str;
+    has grid_generation_id: str;
     has grid_revision: int;
     has actions: list[RecoveryAction];
     has explanation: str;
@@ -82,6 +84,7 @@ obj RecoveryPlan {
 }
 sem RecoveryPlan = "A proposed response to the current simulated grid fault, not an approved or applied change.";
 sem RecoveryPlan.fault_id = "The active fault scenario ID from the supplied graph state.";
+sem RecoveryPlan.grid_generation_id = "Copy the opaque generation ID from the supplied graph state; a reset creates a new generation.";
 sem RecoveryPlan.grid_revision = "The graph revision observed when this plan was proposed; stale revisions are rejected.";
 sem RecoveryPlan.actions = "Ordered intended actions only. No action changes the graph until deterministic validation and application succeed.";
 sem RecoveryPlan.explanation = "A concise rationale grounded in the supplied fault and graph facts, without claiming an unverified result.";
@@ -97,6 +100,7 @@ obj CandidateAllocationView {
 
 obj ValidationResult {
     has accepted: bool;
+    has checked_generation_id: str;
     has checked_revision: int;
     has reasons: list[str];
     has candidate: CandidateAllocationView | None = None;
