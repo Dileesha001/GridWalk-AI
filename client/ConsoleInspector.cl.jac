@@ -9,4 +9,3 @@ def:pub ConsoleInspector(grid: GraphState, selected: str, onSelect: Callable[[st
             <TopologyDetails grid={grid} selected={selected}/>
         </details>;
 }
-

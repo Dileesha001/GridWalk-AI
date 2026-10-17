@@ -34,4 +34,3 @@ glob:pub image_urls: dict[str, str] = {
     "imgEllipse2": imgEllipse2 as str,
     "imgEllipse3": imgEllipse3 as str
 };
-
