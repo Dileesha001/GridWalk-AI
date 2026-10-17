@@ -93,7 +93,10 @@ def _revision_feedback(plan: RecoveryPlan, reasons: list[str]) -> str {
     );
 }
 
-def run_triage(fault_id: str) -> TriageResult {
+def _run_triage_with_planner(
+    fault_id: str,
+    planner: Callable[[MonitorFacts, str], RecoveryPlan]
+) -> TriageResult {
     before = inject_fault(fault_id);
     if _already_applied(before, fault_id) {
         return _result(fault_id, TriageStatus.ALREADY_APPLIED, before, 0, []);
@@ -119,7 +122,7 @@ def run_triage(fault_id: str) -> TriageResult {
                            attempts=attempts);
         }
         try {
-            plan = propose_plan(facts, feedback);
+            plan = planner(facts, feedback);
         } except ByLLMError {
             return _result(fault_id, TriageStatus.PROVIDER_FAILED, before, proposal_count,
                            reasons, last_plan, last_validation,
@@ -196,4 +199,8 @@ def run_triage(fault_id: str) -> TriageResult {
 
     return _result(fault_id, TriageStatus.EXHAUSTED, before, proposal_count,
                    reasons, last_plan, last_validation, attempts=attempts);
+}
+
+def run_triage(fault_id: str) -> TriageResult {
+    return _run_triage_with_planner(fault_id, propose_plan);
 }

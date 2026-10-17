@@ -2,7 +2,7 @@
 
 Scope: implement the Jac Monitor, Planner, and Auditor walkers, typed recovery proposals, bounded AI calls, recovery orchestration, factual events, and final results. Member 1 owns graph arithmetic, validation, approved application, and deterministic fallback candidate generation. Member 3 owns the dashboard and client adapter. The governing rule is: **AI proposes; deterministic Jac code validates; the simulation engine applies.**
 
-This list reflects `dev` at commit `84f1164`. Member 1 has merged `GraphState`, three fault scenarios, and a non-mutating allocation preview. `grid/validation.jac` and approved-plan application are still placeholders. Do not claim an end-to-end recovery until those operations are available and integrated.
+Member 1's validator and approved-plan application are merged. The Jac 0.34.13 migration is merged, and Member 2 Step 4 has fixed-proposal runtime coverage plus one successful live Gemini line-fault recovery. Events, Auditor, fallback, and dashboard integration remain future work. Do not claim an end-to-end dashboard recovery yet.
 
 ## Branch workflow
 
@@ -10,11 +10,11 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 
 | Order | Branch | Deliverable | Dependency | Status |
 | --- | --- | --- | --- | --- |
-| 0 | `member2/00-task-list` | This task list and handoff sequence | Current `dev` | Ready for PR |
-| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Member 1 handoff; Member 3 event transport later | Member 1 validation/application handoff ready on `member2/01b-validation-handoff` |
-| 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | Code implemented; runtime verification pending |
-| 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | Implemented; live Gemini typed proposal passed; validator integration later |
-| 4 | `member2/04-validation-revision` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | Code implemented; runtime behavior not yet verified |
+| 0 | `member2/00-task-list` | This task list and handoff sequence | Current `dev` | Merged |
+| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Member 1 handoff; Member 3 event transport later | Merged; Member 1 handoff accepted |
+| 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | Merged; line-fault observations exercised through Step 4 |
+| 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | Merged; live Gemini proposal repeated on Jac 0.34.13 |
+| 4 | `member2/04-validation-revision` and `member2/04b-orchestration-runtime` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | Fixed paths passed 8/8; one live line-fault plan validated and applied; 04b branch ready for PR |
 | 5 | `member2/05-auditor-events` | Auditor, ordered events, final result and read API | Task 4; Member 3 envelope agreement | To do |
 | 6 | `member2/06-fallback-budgets` | Request budgets, backup provider, deterministic fallback handling | Tasks 4–5; tested provider access | To do |
 | 7 | `member2/07-scenario-integration` | Three scenario handoff and failure-path evidence | Members 1 and 3 integrations | To do |
@@ -69,8 +69,8 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 
 ## Immediate handoffs
 
-1. **Member 1:** Task 4 can proceed from the [validation/application handoff](MEMBER_2_CONTRACTS.md#member-1-task-45-handoff-ready-to-implement) once `member2/01b-validation-handoff` is merged. Action targets, validator output, application behavior, and reset-safe stale-plan fields are specified there. Deterministic fallback candidate ownership stays with Member 1 for later integration.
-2. **Member 3:** agree `run_triage` result envelope, event ordering/run IDs, polling or streaming, execution mode labels, and busy/reset behavior before Task 5.
-3. **Provider access:** select a Gemini Flash model only after typed output succeeds for the actual account; confirm whether a separate backup provider can be tested. Keep keys outside the repository.
+1. **Member 1:** validation and approved application are integrated. Deterministic fallback candidate generation remains Member 1's handoff for Task 6.
+2. **Member 3:** agree the public recovery-result envelope, event ordering/run IDs, polling or streaming, execution mode labels, and busy/reset behavior for Task 5.
+3. **Provider access:** Gemini typed output and one accepted line-fault run passed on Jac 0.34.13. Confirm whether a separate backup provider can be tested for Task 6. Keep keys outside the repository.
 
 For every branch handoff, report changed files, exact checks run, fixture and execution mode used, observed result, limitations, and the next dependency. A compiler pass alone does not prove provider calls or a recovery outcome.
