@@ -10,3 +10,4 @@ __pycache__/
 !.env.example
 .vscode/
 .idea/
+dist/

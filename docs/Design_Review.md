@@ -1,5 +1,9 @@
 # Design review and implementation audit
 
+Build environment update: the required compiler is now native Jac 0.34.13 on
+WSL 2. See [WSL setup and current verification](WSL_Setup.md). Counts and paths
+below describe the original Windows redesign milestone unless noted there.
+
 Reference: [GridWalk recovery console in Figma](https://www.figma.com/design/MBDQDKSfBy0ybXnNvlkMKE/GridWalk-AI-%C2%B7-Recovery-Console?node-id=0-1).
 
 ## Current access
