@@ -93,6 +93,12 @@ See [topology preview notes](Topology_Preview.md) for files and validation evide
 
 ## Next: Step 6
 
+Update: the healthy Figma console refresh and a re-audit of Steps 1–5 are now
+implemented locally. The active UI uses Jac style dictionaries and bundled local
+design assets. Current task statuses and verification evidence are maintained in
+[dashboard implementation order](Dashboard_Implementation_Status.md) and the
+[design review](Design_Review.md). Earlier entries above are historical milestones.
+
 Connect scenario controls and metrics to server operations, preserving server
 authority. Activity, incident output, recovery orchestration integration,
 concurrency handling, end-to-end scenario checks, and deployment remain pending.

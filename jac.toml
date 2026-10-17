@@ -28,3 +28,9 @@ watchdog = ">=3.0.0"
 base_route_app = "app"
 
 [plugins.client]
+
+[plugins.client.app_meta_data]
+title = "GridWalk AI · Recovery console"
+description = "Fictional microgrid recovery console with inspectable fixed display snapshots."
+theme_color = "#102b30"
+icon = "data:,"
