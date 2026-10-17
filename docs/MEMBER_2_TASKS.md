@@ -11,7 +11,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 | Order | Branch | Deliverable | Dependency | Status |
 | --- | --- | --- | --- | --- |
 | 0 | `member2/00-task-list` | This task list and handoff sequence | Current `dev` | Ready for PR |
-| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Agree fields with Members 1 and 3 | To do |
+| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Agree fields with Members 1 and 3 | Implemented; contract review pending |
 | 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | To do |
 | 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | To do |
 | 4 | `member2/04-validation-revision` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | To do |
