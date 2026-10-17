@@ -2,7 +2,7 @@ sv import from ..shared.contracts { GraphState }
 import from .console_styles { s, colors }
 import from .console_format { number as kw }
 
-def:pub ConsoleActivity() -> JsxElement {
+def:pub ConsoleActivity(preview: bool = False) -> JsxElement {
     roles: list[tuple[str, str]] = [
         ("01  Monitor · ready", "Waiting for a fault. No monitoring agent has run."),
         ("02  Planner · waiting", "Will propose recovery after the Monitor reports a fault."),
@@ -11,7 +11,7 @@ def:pub ConsoleActivity() -> JsxElement {
     ];
     return <section id="activity" style={{**s("panel"), "gap": 4, "minHeight": 492}} aria-labelledby="activity-title">
         <div style={s("row")}><h2 id="activity-title" style={s("sectionTitle")}>Agent activity</h2><span style={s("pill")}>No run</span></div>
-        <p style={s("mono")}>DESIGN PREVIEW · no live events</p>
+        <p style={s("mono")}>{"FIXED PREVIEW · no live events" if preview else "AGENTS NOT STARTED · no recovery run"}</p>
         {for role in roles { <div key={role[0]} style={s("event")}><h3 style={s("strong")}>{role[0]}</h3><p style={s("small")}>{role[1]}</p></div> }}
         <div style={s("approval")}><p style={{**s("strong"), "color": colors["tealStrong"]}}>AI proposes. Code verifies.</p><p style={s("small")}>3 agents + deterministic validation.</p></div>
     </section>;
@@ -25,9 +25,9 @@ def:pub ConsoleSupply(grid: GraphState) -> JsxElement {
     </section>;
 }
 
-def:pub ConsoleIncident(grid: GraphState, baseline: bool) -> JsxElement {
-    return <section id="incident" style={s("evidence")} aria-labelledby="incident-title"><h2 id="incident-title" style={s("strong")}>{"A clear starting point" if baseline else "Inspect the fixed snapshot"}</h2>
-        <p style={s("small")}>{"105 kW critical demand · 205 kW total demand. Reserve supply already includes local commitments." if baseline else kw(grid.metrics.unmet_kw) + " kW unmet · " + kw(grid.metrics.shed_kw) + " kW deliberately shed. This display example is not a recovery result."}</p>
-        <div><span style={s("pill")}>{"No action needed" if baseline else "No live recovery result"}</span></div>
+def:pub ConsoleIncident(grid: GraphState, baseline: bool, preview: bool = False) -> JsxElement {
+    return <section id="incident" style={s("evidence")} aria-labelledby="incident-title"><h2 id="incident-title" style={s("strong")}>{"A clear starting point" if baseline else "Inspect the fixed snapshot" if preview else "Active simulated fault"}</h2>
+        <p style={s("small")}>{kw(grid.metrics.unmet_kw) + " kW unmet · " + kw(grid.metrics.shed_kw) + " kW deliberately shed. " + ("This display example is not a recovery result." if preview else "No recovery has been started from this console.")}</p>
+        <div><span style={s("pill")}>{"No action needed" if baseline else "No live recovery result" if preview else "Recovery not started"}</span></div>
     </section>;
 }

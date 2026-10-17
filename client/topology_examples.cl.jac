@@ -35,5 +35,5 @@ def:pub topology_example(example: str = "baseline") -> GraphState {
     }
     # Post-fault/rerouted snapshots are illustrative display examples, not approved plans.
     metrics = {"total_demand_kw": 205.0, "served_kw": 100.0 if source_fault else 180.0 if rerouted else 145.0 if fault else 205.0, "unmet_kw": 105.0 if source_fault else 25.0 if rerouted else 60.0 if fault else 0.0, "shed_kw": 25.0 if rerouted else 0.0, "available_capacity_kw": 205.0 if source_fault else 275.0, "dispatched_kw": 100.0 if source_fault else 180.0 if rerouted else 145.0 if fault else 205.0, "critical_preserved_pct": 100.0 if not fault and not source_fault or rerouted else 100.0 * 45.0 / 105.0, "active_fault_count": 1 if fault or source_fault else 0} as GridMetrics;
-    return {"grid_id": "GRID-01", "revision": 0, "active_fault_ids": ["FAULT-SOURCE-A"] if source_fault else ["FAULT-LINE-A-H"] if fault else [], "sources": sources, "loads": loads, "lines": lines, "metrics": metrics} as GraphState;
+    return {"grid_id": "GRID-01", "generation_id": "FIXED-DISPLAY-EXAMPLE", "revision": 0, "active_fault_ids": ["FAULT-SOURCE-A"] if source_fault else ["FAULT-LINE-A-H"] if fault else [], "sources": sources, "loads": loads, "lines": lines, "metrics": metrics} as GraphState;
 }

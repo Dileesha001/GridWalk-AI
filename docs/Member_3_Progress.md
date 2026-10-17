@@ -108,3 +108,19 @@ design assets. Current task statuses and verification evidence are maintained in
 Connect scenario controls and metrics to server operations, preserving server
 authority. Activity, incident output, recovery orchestration integration,
 concurrency handling, end-to-end scenario checks, and deployment remain pending.
+
+## Step 6: live simulation controls — complete locally
+
+The console now reads canonical server state, injects each named fault, resets,
+and refreshes metrics/topology after mutations. Fixed previews remain separate.
+Duplicate submissions are blocked, failed confirmation retains the last confirmed
+snapshot, and refresh restores confirmed state. A cross-request reset persistence
+regression was fixed by attaching the new branch before deleting the previous one.
+
+Verification in native Jac 0.34.13 on WSL includes 21 client runtime tests and
+28 simulation tests, static checks, web/sealed builds, HTTP scenario checks, and
+Chrome live/preview workflows at four viewport widths. No recovery provider was
+called. Details are in [live integration verification](Live_Grid_Integration.md).
+
+Step 7 is next: real recovery controls, ordered events, and incident outcomes.
+Step 6 is included in this dashboard milestone; PR creation remains with the user.

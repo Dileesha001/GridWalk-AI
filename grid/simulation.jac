@@ -185,9 +185,12 @@ def:pub apply_approved_plan(plan: RecoveryPlan) -> GraphState {
 }
 
 def:pub reset_simulation() -> GraphState {
-    for existing in [root -->[?:Grid]] {
+    previous = [root -->[?:Grid]];
+    # Keep root connected while replacing its branch across persisted requests.
+    fresh = build_healthy_fixture();
+    for existing in previous {
         for bus in [existing -->[?:GridBus]] { del bus; }
         del existing;
     }
-    return _project(build_healthy_fixture());
+    return _project(fresh);
 }
