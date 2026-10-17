@@ -20,7 +20,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | Task | Branch | Depends on | Status |
 |---|---|---|---|
 | 1. Graph contract and healthy fixture | `member1/01-graph-contract-fixture` | — | Implemented; contract review pending |
-| 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | To do |
+| 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | To do |
 | 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | To do |
 | 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
@@ -43,6 +43,8 @@ Implementation evidence: `grid/graph.jac`, `grid/fixture.jac`, and `shared/contr
 - Expose the canonical `get_grid_state()`, `inject_fault(fault_id)`, and `reset_simulation()` behavior from `grid/simulation.jac` through signatures agreed with the other members. Return the `GraphState` projection from `shared/contracts.jac`.
 - Recompute derived status after every fault/reset and preserve stable IDs.
 - **Done when:** all three faults change the expected entities; unknown fault IDs are rejected; reset exactly restores the healthy fixture and its metrics.
+
+Implementation evidence: `grid/fixture.jac` defines the three fault inputs, `grid/simulation.jac` implements the Jac state/fault/reset functions, and `grid/metrics.jac` computes current readings. [Fixture notes](MEMBER_1_FIXTURE.md) list exact pre-recovery outcomes. `jac check .` passed (14 files) and `jac test tests/fault_checks.jac -v` passed (5 tests). Member 2/3 contract review and client integration remain separate work.
 
 ## 3. Deterministic allocation and routing
 

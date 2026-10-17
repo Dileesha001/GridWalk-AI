@@ -3,6 +3,7 @@
 node Grid {
     has grid_id: str;
     has revision: int = 0;
+    has active_fault_id: str = "";
 }
 
 node GridBus {
@@ -22,6 +23,8 @@ node Load(GridBus) {
 
 edge PowerLine: GridBus --> GridBus {
     has line_id: str;
+    has from_bus_id: str;
+    has to_bus_id: str;
     has switch_id: str;
     has capacity_kw: float;
     has switch_closed: bool = True;
