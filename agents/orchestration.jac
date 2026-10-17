@@ -5,7 +5,7 @@ import from uuid { uuid4 }
 import from agents.auditor { audit_incident, factual_incident_summary }
 import from agents.events { record_agent_run }
 import from agents.monitor { MonitorFacts, inspect_grid }
-import from agents.planner { propose_plan }
+import from agents.planner { propose_plan, propose_backup_plan, REQUEST_TIMEOUT_SECONDS }
 import from jaclang.byllm.lib { ByLLMError }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, apply_approved_plan }
@@ -17,13 +17,15 @@ import from shared.contracts {
 }
 
 glob MAX_PLAN_PROPOSALS: int = 2;
+glob MAX_RECOVERY_SECONDS: float = 65.0;
 
 enum TriageStatus: str {
     APPLIED = "applied",
     ALREADY_APPLIED = "already_applied",
     EXHAUSTED = "exhausted",
     STALE = "stale",
-    PROVIDER_FAILED = "provider_failed"
+    PROVIDER_FAILED = "provider_failed",
+    BUDGET_EXHAUSTED = "budget_exhausted"
 }
 
 obj TriageAttempt {
@@ -45,6 +47,9 @@ obj TriageResult {
     has failure_reason: str | None = None;
     has run_id: str = "";
     has recovery_result: RecoveryResult | None = None;
+    has attempt_modes: list[ExecutionMode] = [];
+    has backup_after_attempt: int | None = None;
+    has backup_reason: str | None = None;
 }
 
 def _result(fault_id: str, status: TriageStatus, before_state: GraphState,
@@ -101,9 +106,15 @@ def _revision_feedback(plan: RecoveryPlan, reasons: list[str]) -> str {
 
 def _run_triage_with_planner(
     fault_id: str,
-    planner: Callable[[MonitorFacts, str], RecoveryPlan]
+    planner: Callable[[MonitorFacts, str], RecoveryPlan],
+    deadline: float | None = None,
+    before_state: GraphState | None = None
 ) -> TriageResult {
-    before = inject_fault(fault_id);
+    before = before_state if before_state is not None else inject_fault(fault_id);
+    if before_state is not None and not _same_snapshot(before_state) {
+        return _result(fault_id, TriageStatus.STALE, before, 0,
+                       ["Grid changed before backup planning began"]);
+    }
     if _already_applied(before, fault_id) {
         return _result(fault_id, TriageStatus.ALREADY_APPLIED, before, 0, []);
     }
@@ -127,6 +138,12 @@ def _run_triage_with_planner(
                            ["Grid changed during planning"], last_plan, last_validation,
                            attempts=attempts);
         }
+        if deadline is not None and perf_counter() + REQUEST_TIMEOUT_SECONDS > deadline {
+            return _result(fault_id, TriageStatus.BUDGET_EXHAUSTED, before,
+                           proposal_count, reasons, last_plan, last_validation,
+                           "Recovery deadline left no time for another provider request",
+                           attempts=attempts);
+        }
         try {
             plan = planner(facts, feedback);
         } except ByLLMError {
@@ -138,9 +155,28 @@ def _run_triage_with_planner(
             return _result(fault_id, TriageStatus.PROVIDER_FAILED, before, proposal_count,
                            reasons, last_plan, last_validation,
                            "Planner returned a malformed proposal", attempts=attempts);
+        } except TimeoutError {
+            return _result(fault_id, TriageStatus.PROVIDER_FAILED, before, proposal_count,
+                           reasons, last_plan, last_validation,
+                           "Planner request timed out", attempts=attempts);
+        } except Exception {
+            return _result(fault_id, TriageStatus.PROVIDER_FAILED, before, proposal_count,
+                           reasons, last_plan, last_validation,
+                           "Planner request failed before a valid proposal was available",
+                           attempts=attempts);
         }
         proposal_count += 1;
         last_plan = plan;
+
+        if deadline is not None and perf_counter() >= deadline {
+            reasons = ["Recovery deadline expired before validation"];
+            attempts.append(TriageAttempt(
+                plan=plan, validation=None, rejection_reasons=reasons.copy()
+            ));
+            return _result(fault_id, TriageStatus.BUDGET_EXHAUSTED, before,
+                           proposal_count, reasons, plan, last_validation,
+                           "Recovery deadline expired before validation", attempts=attempts);
+        }
 
         if len(plan.actions) == 0 {
             reasons = ["Planner proposed no supported recovery action"];
@@ -172,6 +208,16 @@ def _run_triage_with_planner(
                 return _result(fault_id, TriageStatus.EXHAUSTED, before, proposal_count,
                                ["Validator accepted without a candidate allocation"],
                                plan, validation, attempts=attempts);
+            }
+            if deadline is not None and perf_counter() >= deadline {
+                attempts.append(TriageAttempt(
+                    plan=plan, validation=validation,
+                    rejection_reasons=["Recovery deadline expired before application"]
+                ));
+                return _result(fault_id, TriageStatus.BUDGET_EXHAUSTED, before,
+                               proposal_count, ["Recovery deadline expired before application"],
+                               plan, validation, "Recovery deadline expired before application",
+                               attempts=attempts);
             }
             try {
                 applied = apply_approved_plan(plan);
@@ -206,6 +252,31 @@ def _run_triage_with_planner(
     return _result(fault_id, TriageStatus.EXHAUSTED, before, proposal_count,
                    reasons, last_plan, last_validation, attempts=attempts);
 }
+
+
+def _combine_provider_runs(primary: TriageResult, backup: TriageResult) -> TriageResult {
+    combined = _result(
+        primary.fault_id, backup.status, primary.before_state,
+        primary.proposal_count + backup.proposal_count,
+        primary.rejection_reasons + backup.rejection_reasons,
+        backup.last_plan if backup.last_plan is not None else primary.last_plan,
+        backup.last_validation if backup.last_validation is not None else primary.last_validation,
+        backup.failure_reason, backup.after_state,
+        primary.attempts + backup.attempts
+    );
+    combined.attempt_modes = (
+        [ExecutionMode.PRIMARY_AI for _ in primary.attempts] +
+        [ExecutionMode.BACKUP_AI for _ in backup.attempts]
+    );
+    combined.backup_after_attempt = len(primary.attempts);
+    combined.backup_reason = (
+        "Primary provider failed or returned malformed output"
+        if primary.status == TriageStatus.PROVIDER_FAILED
+        else "Primary proposals were rejected or exhausted"
+    );
+    return combined;
+}
+
 
 def _action_labels(actions: list[RecoveryAction]) -> str {
     labels: list[str] = [];
@@ -321,11 +392,23 @@ def _finalize_triage(
         f"served_kw={triage.before_state.metrics.served_kw:.1f}"
     );
     for index in range(len(triage.attempts)) {
+        if triage.backup_after_attempt == index {
+            _append_event(
+                events, run_id, AgentActor.SYSTEM, AgentEventKind.FALLBACK,
+                AgentEventOutcome.INFO, "Switched to independent Groq backup",
+                triage.backup_reason or "Primary planning did not apply a plan"
+            );
+        }
         attempt = triage.attempts[index];
+        attempt_mode = (
+            triage.attempt_modes[index]
+            if index < len(triage.attempt_modes) else ExecutionMode.PRIMARY_AI
+        );
         _append_event(
             events, run_id, AgentActor.PLANNER, AgentEventKind.PROPOSAL,
             AgentEventOutcome.INFO, f"Proposal {index + 1} submitted for validation",
-            f"Proposed actions (not applied): {_action_labels(attempt.plan.actions)}"
+            f"mode={attempt_mode}; proposed actions (not applied): " +
+            _action_labels(attempt.plan.actions)
         );
         if attempt.validation is not None {
             accepted = attempt.validation.accepted;
@@ -348,10 +431,10 @@ def _finalize_triage(
                 "; ".join(attempt.rejection_reasons)
             );
         }
-        if index + 1 < len(triage.attempts) or (
-            triage.status == TriageStatus.PROVIDER_FAILED and
-            index + 1 == len(triage.attempts) and
-            len(triage.attempts) < MAX_PLAN_PROPOSALS
+        if (
+            index + 1 < len(triage.attempts) and
+            (index + 1 >= len(triage.attempt_modes) or
+             triage.attempt_modes[index + 1] == attempt_mode)
         ) {
             _append_event(
                 events, run_id, AgentActor.PLANNER, AgentEventKind.REVISION,
@@ -359,6 +442,13 @@ def _finalize_triage(
                 "; ".join(attempt.rejection_reasons)
             );
         }
+    }
+    if triage.backup_after_attempt == len(triage.attempts) {
+        _append_event(
+            events, run_id, AgentActor.SYSTEM, AgentEventKind.FALLBACK,
+            AgentEventOutcome.INFO, "Switched to independent Groq backup",
+            triage.backup_reason or "Primary planning did not apply a plan"
+        );
     }
     if triage.status == TriageStatus.APPLIED {
         _append_event(
@@ -381,7 +471,10 @@ def _finalize_triage(
     } else {
         _append_event(
             events, run_id, AgentActor.SYSTEM, AgentEventKind.FAILURE,
-            AgentEventOutcome.ERROR if triage.status in [TriageStatus.STALE, TriageStatus.PROVIDER_FAILED]
+            AgentEventOutcome.ERROR if triage.status in [
+                TriageStatus.STALE, TriageStatus.PROVIDER_FAILED,
+                TriageStatus.BUDGET_EXHAUSTED
+            ]
             else AgentEventOutcome.REJECTED,
             "Recovery run ended without an applied plan",
             triage.failure_reason or "; ".join(triage.rejection_reasons)
@@ -395,7 +488,9 @@ def _finalize_triage(
         before_metrics=triage.before_state.metrics,
         after_metrics=triage.after_state.metrics,
         incident_summary=summary, proposal_count=triage.proposal_count,
-        revision_count=max(0, triage.proposal_count - 1),
+        revision_count=sum([
+            1 for event in events if event.kind == AgentEventKind.REVISION
+        ]),
         elapsed_ms=max(0, int((perf_counter() - started) * 1000)),
         failure_reason=triage.failure_reason or (
             "; ".join(triage.rejection_reasons)
@@ -410,24 +505,64 @@ def _finalize_triage(
 }
 
 
-def:pub run_triage(
-    fault_id: str, generation_id: str = "", expected_revision: int = -1
+def _run_triage_with_providers(
+    fault_id: str,
+    primary_planner: Callable[[MonitorFacts, str], RecoveryPlan],
+    backup_planner: Callable[[MonitorFacts, str], RecoveryPlan]
 ) -> TriageResult {
     started = perf_counter();
     run_id = str(uuid4());
-    current = get_grid_state();
-    if generation_id and (
-        current.generation_id != generation_id or
-        current.revision != expected_revision or
-        current.active_fault_ids != [fault_id]
-    ) {
-        stale = _result(
-            fault_id, TriageStatus.STALE, current, 0,
-            ["Recovery request used an outdated grid generation or revision"],
-            failure_reason="Grid changed before recovery started"
-        );
-        return _finalize_triage(stale, run_id, started, ExecutionMode.NONE);
+    deadline = started + MAX_RECOVERY_SECONDS;
+    primary = _run_triage_with_planner(fault_id, primary_planner, deadline);
+    primary.attempt_modes = [ExecutionMode.PRIMARY_AI for _ in primary.attempts];
+    if primary.status not in [TriageStatus.PROVIDER_FAILED, TriageStatus.EXHAUSTED] {
+        return _finalize_triage(primary, run_id, started, ExecutionMode.PRIMARY_AI);
     }
-    triage = _run_triage_with_planner(fault_id, propose_plan);
-    return _finalize_triage(triage, run_id, started, ExecutionMode.PRIMARY_AI);
+    if not _same_snapshot(primary.before_state) {
+        primary.status = TriageStatus.STALE;
+        primary.after_state = get_grid_state();
+        primary.rejection_reasons = ["Grid changed before backup planning began"];
+        primary.failure_reason = "Grid changed before backup planning began";
+        return _finalize_triage(primary, run_id, started, ExecutionMode.NONE);
+    }
+    if perf_counter() + REQUEST_TIMEOUT_SECONDS > deadline {
+        primary.status = TriageStatus.BUDGET_EXHAUSTED;
+        primary.failure_reason = "Recovery deadline left no time for backup planning";
+        return _finalize_triage(primary, run_id, started, ExecutionMode.NONE);
+    }
+    backup = _run_triage_with_planner(
+        fault_id, backup_planner, deadline, primary.before_state
+    );
+    if backup.status == TriageStatus.STALE and backup.proposal_count == 0 {
+        primary.status = TriageStatus.STALE;
+        primary.after_state = backup.after_state;
+        primary.rejection_reasons = backup.rejection_reasons;
+        primary.failure_reason = "Grid changed before backup planning began";
+        return _finalize_triage(primary, run_id, started, ExecutionMode.NONE);
+    }
+    combined = _combine_provider_runs(primary, backup);
+    return _finalize_triage(combined, run_id, started, ExecutionMode.BACKUP_AI);
+}
+
+
+def:pub run_triage(
+    fault_id: str, generation_id: str = "", expected_revision: int = -1
+) -> TriageResult {
+    if generation_id {
+        current = get_grid_state();
+        if (
+            current.generation_id != generation_id or
+            current.revision != expected_revision or
+            current.active_fault_ids != [fault_id]
+        ) {
+            started = perf_counter();
+            stale = _result(
+                fault_id, TriageStatus.STALE, current, 0,
+                ["Recovery request used an outdated grid generation or revision"],
+                failure_reason="Grid changed before recovery started"
+            );
+            return _finalize_triage(stale, str(uuid4()), started, ExecutionMode.NONE);
+        }
+    }
+    return _run_triage_with_providers(fault_id, propose_plan, propose_backup_plan);
 }

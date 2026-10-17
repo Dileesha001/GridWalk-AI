@@ -38,6 +38,3 @@ title = "GridWalk AI · Recovery console"
 description = "Fictional microgrid recovery console with inspectable fixed display snapshots."
 theme_color = "#102b30"
 icon = "data:,"
-
-[byllm.model]
-default_model = "gemini/gemini-3.8-flash"

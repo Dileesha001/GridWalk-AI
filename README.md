@@ -40,7 +40,7 @@ Open `http://localhost:8011` in the Windows browser. Keep Linux dependencies sep
 
 For hot reload, use `jac start --dev main.jac --port 8001`; open `http://localhost:8001`, with the API on port 8002. To build the web client separately, stop the dev server and run `jac build --client web`.
 
-For live Gemini calls, keep `GOOGLE_API_KEY` in the ignored `.env` at the Linux project root. Do not commit the key. The preview checks do not require a live model call.
+For live recovery calls, keep `GOOGLE_API_KEY` and optional Groq backup `GROQ_API_KEY` in the ignored `.env` at the running project's root. Do not commit keys. The preview checks do not require a live model call. See [Member 2's provider budgets and pending fallback handoff](docs/MEMBER_2_FALLBACK_BUDGETS.md).
 
 The verification script covers client syntax/types, foundation/topology/live-decoder regressions, simulation/validation/application regressions, the web shell, and the sealed app artifact. Current WSL results are recorded in the [setup guide](docs/WSL_Setup.md). Historical Windows checks remain in earlier milestone notes; these checks do not establish end-to-end recovery or deployment.
 

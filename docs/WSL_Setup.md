@@ -23,11 +23,12 @@ Step 6 also corrects reset branch replacement order so a fresh generation persis
 across HTTP requests. The removed `global` directive
 now follows Jac's nearest-enclosing-binding behavior.
 
-The merged planner uses native `[byllm.model]` configuration. Its model choice
-is preserved; the obsolete standalone `byllm` package is removed because this
-Jac release supplies that capability directly. `jac install` resolves the
-built-in capability's provider dependencies. No live model call is needed for
-these build and deterministic regression checks.
+At migration time the planner used native `[byllm.model]` configuration. Step 6
+later moved the primary and backup model settings into `agents/planner.jac` for
+explicit provider attribution. The obsolete standalone `byllm` package was
+removed because this Jac release supplies that capability directly. `jac install`
+resolves the built-in capability's provider dependencies. No live model
+call was part of the original migration checks.
 
 Official references: [0.34.13 release](https://github.com/jaseci-labs/jac/releases/tag/v0.34.13)
 and [versioned breaking changes](https://github.com/jaseci-labs/jac/blob/v0.34.13/docs/docs/community/breaking-changes.md).

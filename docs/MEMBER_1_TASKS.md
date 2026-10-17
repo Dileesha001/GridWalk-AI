@@ -25,7 +25,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
 | 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Implemented; ready for review |
 | 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | Implemented; ready for review |
-| 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
+| 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | Member 1 fallback and scenario checks implemented; joint integration pending |
 
 ## 1. Graph contract and healthy fixture
 
@@ -83,6 +83,8 @@ Implementation evidence: `grid/simulation.jac` now exposes `apply_approved_plan(
 - Integrate the `grid/validation.jac` and `grid/simulation.jac` handoff with Member 2 and the state/fault/reset API with Member 3 without taking ownership of `agents/`, `client/`, or `main.jac`.
 - Run the installed Jac checker and task-specific runtime tests. Record actual commands, results, remaining limits, and the next integration step.
 - **Done when:** the three scenarios are repeatable, failure leaves the fault visible, and the other members can consume the agreed state and validation contracts.
+
+Implementation evidence: `grid/fallback.jac` supplies a snapshot-bound, non-mutating deterministic `RecoveryPlan` proposal for Member 2. `tests/scenario_checks.jac` checks all three fixed fault outcomes, a blocked-route failure, stale reset, and the fixed-proposal Member 2 triage handoff. [Scenario handoff](MEMBER_1_SCENARIOS.md) records exact actions, metrics, limits, and the remaining Member 2/3 work. Task 6 remains open until those consumers exercise the agreed interfaces and the joint live scenario run is recorded.
 
 ## Shared decisions to settle early
 
