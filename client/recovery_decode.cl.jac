@@ -66,7 +66,7 @@ def:pub check_run_evidence(result: RecoveryResult, events: list[AgentEvent]) -> 
 
 def:pub decode_triage(raw: any, fault_id: str) -> TriageResult {
     data = object_value(raw); run_id = identity(data, "run_id");
-    if text(data, "fault_id") != fault_id or text(data, "status") not in ["applied", "already_applied", "exhausted", "stale", "provider_failed", "budget_exhausted"] { raise ValueError("Unexpected recovery response."); }
+    if text(data, "fault_id") != fault_id or text(data, "status") not in ["applied", "already_applied", "exhausted", "stale", "provider_failed", "budget_exhausted", "fallback_failed"] { raise ValueError("Unexpected recovery response."); }
     before = decode_grid(data["before_state"]); after = decode_grid(data["after_state"]);
     result = decode_recovery(data["recovery_result"], run_id);
     stale = text(data, "status") == "stale";

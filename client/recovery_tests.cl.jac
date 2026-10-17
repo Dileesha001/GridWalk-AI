@@ -89,3 +89,22 @@ test "triage snapshots must match result measurements and committed status" {
     try { decode_triage(raw, "FAULT-LINE-A-H"); } except Exception { rejected = True; }
     assert rejected;
 }
+
+
+test "bounded and deterministic failures retain uncommitted server evidence" {
+    before: any = JSON.parse(JSON.stringify(topology_example("line_fault")));
+    for status in ["budget_exhausted", "fallback_failed"] {
+        result: any = result_data();
+        result.outcome = "failed";
+        result.execution_mode = "none";
+        result.applied_actions = [];
+        result.after_metrics = before.metrics;
+        result.failure_reason = "No recovery plan committed";
+        raw: any = JSON.parse(JSON.stringify({
+            "run_id": "TEST-RUN", "fault_id": "FAULT-LINE-A-H",
+            "status": status, "before_state": before,
+            "after_state": before, "recovery_result": result
+        }));
+        assert str(decode_triage(raw, "FAULT-LINE-A-H").status) == status;
+    }
+}
