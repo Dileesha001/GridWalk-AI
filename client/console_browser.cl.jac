@@ -15,7 +15,6 @@ def bundled_font_url(url: str) -> str {
 }
 
 async def load_fonts() -> None {
-    global fonts_started;
     if fonts_started { return; }
     fonts_started = True;
     browser: any = window;

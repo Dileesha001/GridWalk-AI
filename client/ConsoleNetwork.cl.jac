@@ -34,11 +34,11 @@ def:pub ConsoleNetwork(grid: GraphState, example: str, selected: str, onSelect: 
                 <p style={{**s("tiny"), "position": "absolute", "left": 360, "top": -4}}>{"Reserve tie · normally open" if baseline else "Illustrative connections · inspect line state below"}</p>
                 {for source in grid.sources {
                     point = positions[source.bus_id];
-                    <button key={source.bus_id} className="topology-node" aria-pressed={selected == source.bus_id} style={bus_style(point[0], point[1], True, source.status)} aria-label={"Inspect " + source.bus_id + ", " + source.label} onClick={lambda e: MouseEvent { onSelect(source.bus_id); }}><span style={{**s("strong"), "display": "block"}}>{source.label}</span><span style={s("mono")}>{kw(source.capacity_kw) + " kW cap · " + source.status}</span></button>;
+                    <button key={source.bus_id} className="topology-node" aria-pressed={selected == source.bus_id} style={bus_style(point[0], point[1], True, source.status)} aria-label={"Inspect " + source.bus_id + ", " + source.label} onClick={lambda (e: MouseEvent) { onSelect(source.bus_id); }}><span style={{**s("strong"), "display": "block"}}>{source.label}</span><span style={s("mono")}>{kw(source.capacity_kw) + " kW cap · " + source.status}</span></button>;
                 }}
                 {for load in grid.loads {
                     point = positions[load.bus_id];
-                    <button key={load.bus_id} className="topology-node" aria-pressed={selected == load.bus_id} style={bus_style(point[0], point[1], False, load.status)} aria-label={"Inspect " + load.bus_id + ", " + load.label} onClick={lambda e: MouseEvent { onSelect(load.bus_id); }}><span style={{**s("strong"), "display": "block"}}>{labels[load.bus_id] if load.bus_id in labels else load.label}{" · T" + str(load.tier)}</span><span style={s("mono")}>{kw(load.served_kw) + " kW · " + load.status}</span></button>;
+                    <button key={load.bus_id} className="topology-node" aria-pressed={selected == load.bus_id} style={bus_style(point[0], point[1], False, load.status)} aria-label={"Inspect " + load.bus_id + ", " + load.label} onClick={lambda (e: MouseEvent) { onSelect(load.bus_id); }}><span style={{**s("strong"), "display": "block"}}>{labels[load.bus_id] if load.bus_id in labels else load.label}{" · T" + str(load.tier)}</span><span style={s("mono")}>{kw(load.served_kw) + " kW · " + load.status}</span></button>;
                 }}
             </div>
         </div>

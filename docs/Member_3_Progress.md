@@ -1,5 +1,7 @@
 # Member 3 progress
 
+This is a historical milestone record from Jac 0.16.7. Use the repository README for the current WSL 2 / Jac 0.34.13 setup.
+
 ## Milestone 1: dashboard data foundation
 
 This milestone supplies client presentation types, payload validation, fixed preview
