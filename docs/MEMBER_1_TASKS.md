@@ -23,7 +23,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | 1. Graph contract and healthy fixture | `member1/01-graph-contract-fixture` | — | Implemented; contract review pending |
 | 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
-| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Ready to implement after `member2/01b-validation-handoff` merges |
+| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Implemented; ready for review |
 | 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
 | 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
 
@@ -64,6 +64,8 @@ Implementation evidence: `grid/allocation.jac` previews whole-load allocations w
 - Implement non-mutating validation in `grid/validation.jac` for the entire candidate state: action types and IDs, target kinds, numbers, switch/fault logic, conducting paths, source and line ratings, conservation, and priority policy.
 - Reject deliberate Tier 1 shedding and return specific, factual reasons that support a Planner revision.
 - **Done when:** invalid candidates leave authoritative state unchanged; Jac tests cover unknown IDs/actions, faulted and open paths, isolated loads, overloads, and duplicate capacity claims.
+
+Implementation evidence: `grid/validation.jac` now exposes `validate_plan(RecoveryPlan) -> ValidationResult` using the merged Member 2 contract. It checks the active fault, generation, and revision before translating typed actions into a non-mutating allocation preview. The existing complete-state validator checks capacities, paths, flow conservation, whole-load service, and priority policy. Accepted results include copied candidate allocation and metrics calculated from that candidate. `tests/validation_checks.jac` covers accepted rerouting and shedding, stale/reset plans, invalid action kinds and targets, duplicate actions, physical faults, critical shedding, and forged allocations. [Validation handoff](MEMBER_1_VALIDATION.md) records the API and limits. `jac check .` passed for 22 Jac files with existing Member 3 client warnings; `jac test tests/validation_checks.jac -v` passed 12 tests.
 
 ## 5. Approved application and metrics
 
