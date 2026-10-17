@@ -1,11 +1,16 @@
 """Member 2 Step 4: fixed proposals exercise triage without provider calls."""
 
 import from agents.monitor { MonitorFacts }
-import from agents.orchestration { _run_triage_with_planner, TriageStatus }
+import from agents.orchestration { _run_triage_with_planner, _run_triage_with_providers, TriageStatus }
+import from agents.events { get_agent_events }
 import from jaclang.byllm.lib { ByLLMError }
 import from grid.fixture { FAULT_LINE_A_H }
 import from grid.simulation { get_grid_state, inject_fault, reset_simulation }
-import from shared.contracts { RecoveryAction, RecoveryActionType, RecoveryPlan }
+import from shared.contracts { AgentEventKind, ExecutionMode, RecoveryAction, RecoveryActionType, RecoveryPlan }
+
+def _provider_failure(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
+    raise ByLLMError("Provider unavailable");
+}
 
 
 def _plan(facts: MonitorFacts, switch_id: str) -> RecoveryPlan {
@@ -160,4 +165,21 @@ test "provider exception returns without application or raw error text" {
     assert result.proposal_count == 0 and len(result.attempts) == 0;
     assert result.after_state.revision == 1;
     assert result.failure_reason == "Planner provider failed before a valid proposal was available";
+}
+
+test "deterministic fallback applies after both AI providers fail" {
+    reset_simulation();
+    result = _run_triage_with_providers(
+        FAULT_LINE_A_H, _provider_failure, _provider_failure
+    );
+    assert result.status == TriageStatus.APPLIED;
+    assert result.recovery_result is not None;
+    assert result.recovery_result.execution_mode == ExecutionMode.DETERMINISTIC;
+    assert result.after_state.revision == result.before_state.revision + 1;
+    assert result.after_state.metrics.critical_preserved_pct == 100.0;
+    assert any([
+        event.kind == AgentEventKind.FALLBACK and
+        "deterministic" in event.summary.lower()
+        for event in get_agent_events(result.run_id)
+    ]);
 }
