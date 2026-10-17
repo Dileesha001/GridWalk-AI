@@ -17,11 +17,15 @@ def main():
     if not bun.is_file():
         raise SystemExit("Run jac install first to install the project-local Bun runtime.")
 
-    for name in ("models", "preview", "decode"):
+    suite = sys.argv[1] if len(sys.argv) > 1 else "foundation"
+    if suite not in ("foundation", "topology"):
+        raise SystemExit("Usage: check_foundation.py [foundation|topology]")
+    modules = ("models", "preview", "decode") if suite == "foundation" else ("models", "topology_examples", "topology_layout")
+    for name in modules:
         source, _, _, _ = compile_cl_module(str(root / "client" / f"{name}.cl.jac"))
         (build / f"{name}.js").write_text(source, encoding="utf-8")
 
-    source, tests, _, _ = compile_cl_module(str(root / "client" / "foundation_tests.cl.jac"))
+    source, tests, _, _ = compile_cl_module(str(root / "client" / f"{suite}_tests.cl.jac"))
     if not tests:
         raise SystemExit("No client tests were discovered; refusing an empty success.")
     entries = ",".join(f'[{json.dumps(t["description"])}, {t["name"]}]' for t in tests)

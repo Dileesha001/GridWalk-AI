@@ -78,10 +78,21 @@ Screenshots and temporary browser verification output live under ignored `.jac/`
 No changes were made to Members 1/2's modules. Draft components and the draft
 adapter for later steps remain separate from the shell's imports.
 
-## Next: Step 5
+## Step 5: topology preview — complete
 
-Implement and verify the topology with labeled sources, loads, physical faults,
-and switch states, using clearly labeled preview snapshots. Then complete controls,
-metrics, activity and incident views, ratify backend fields/routes and concurrency
-semantics, and enable live integration. Deployment and all three end-to-end
-scenarios remain pending.
+The dashboard now renders a read-only topology and component inspector using
+`GraphState` and related types imported from `shared/contracts.jac`. Stable IDs,
+baseline numbers, and wiring match the fixture documentation. The earlier draft
+decoder and live adapter have not been integrated; they need alignment with the
+canonical contracts in the live integration step.
+
+Display examples cover the baseline, source derating, a physical line fault, and
+rerouted service with deliberate shedding. Selecting a snapshot never calls
+simulation mutation or AI endpoints. Fault state stays visible after rerouting.
+See [topology preview notes](Topology_Preview.md) for files and validation evidence.
+
+## Next: Step 6
+
+Connect scenario controls and metrics to server operations, preserving server
+authority. Activity, incident output, recovery orchestration integration,
+concurrency handling, end-to-end scenario checks, and deployment remain pending.
