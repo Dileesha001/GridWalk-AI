@@ -1,6 +1,8 @@
 """Verify only the local recovery_ui_fixture server; never target a live AI server."""
 import json
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from urllib.request import Request, urlopen
 
 
@@ -38,6 +40,32 @@ def main():
         assert after_stale["revision"] == observed["revision"]
         assert after_stale["metrics"] == observed["metrics"]
         print("PASS stale revision rejected without changing grid")
+
+        call("reset_simulation")
+        call("inject_fault", fault_id="FAULT-LINE-A-H")
+        concurrent_snapshot = call("get_grid_state")
+        ready = Barrier(2)
+
+        def concurrent_recovery():
+            ready.wait()
+            return call(
+                "run_triage", fault_id="FAULT-LINE-A-H",
+                generation_id=concurrent_snapshot["generation_id"],
+                expected_revision=concurrent_snapshot["revision"]
+            )
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            concurrent_results = list(pool.map(lambda _index: concurrent_recovery(), range(2)))
+        concurrent_statuses = [item["status"] for item in concurrent_results]
+        assert concurrent_statuses.count("applied") == 1, concurrent_statuses
+        assert all(status in ["applied", "stale", "already_applied"] for status in concurrent_statuses)
+        concurrent_after = call("get_grid_state")
+        assert concurrent_after["revision"] == concurrent_snapshot["revision"] + 1
+        assert sum([
+            len(item["recovery_result"]["applied_actions"])
+            for item in concurrent_results
+        ]) > 0
+        print("PASS concurrent recovery requests commit at most once", concurrent_statuses)
 
         for fault, outcome in [("FAULT-LINE-A-H", "partial"),
                                ("FAULT-SOURCE-A", "partial"),
