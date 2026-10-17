@@ -1,16 +1,20 @@
-"""Bounded proposal, validation, and approved application coordination.
+"""Bounded recovery coordination and factual run result projection."""
 
-Auditor events, provider fallback, and total request budgets follow in later
-Member 2 tasks. This module never writes graph entities directly.
-"""
-
+import from time { perf_counter }
+import from uuid { uuid4 }
+import from agents.auditor { audit_incident, factual_incident_summary }
+import from agents.events { record_agent_run }
 import from agents.monitor { MonitorFacts, inspect_grid }
 import from agents.planner { propose_plan }
 import from jaclang.byllm.lib { ByLLMError }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, apply_approved_plan }
 import from grid.validation { validate_plan }
-import from shared.contracts { GraphState, RecoveryAction, RecoveryPlan, ValidationResult }
+import from shared.contracts {
+    AgentActor, AgentEvent, AgentEventKind, AgentEventOutcome,
+    ExecutionMode, GraphState, RecoveryAction, RecoveryActionType, RecoveryOutcome, RecoveryPlan,
+    RecoveryResult, ValidationResult
+}
 
 glob MAX_PLAN_PROPOSALS: int = 2;
 
@@ -39,6 +43,8 @@ obj TriageResult {
     has last_plan: RecoveryPlan | None = None;
     has last_validation: ValidationResult | None = None;
     has failure_reason: str | None = None;
+    has run_id: str = "";
+    has recovery_result: RecoveryResult | None = None;
 }
 
 def _result(fault_id: str, status: TriageStatus, before_state: GraphState,
@@ -201,6 +207,212 @@ def _run_triage_with_planner(
                    reasons, last_plan, last_validation, attempts=attempts);
 }
 
-def run_triage(fault_id: str) -> TriageResult {
-    return _run_triage_with_planner(fault_id, propose_plan);
+def _action_labels(actions: list[RecoveryAction]) -> str {
+    labels: list[str] = [];
+    for action in actions {
+        labels.append(f"{action.action_type} {action.target_id}");
+    }
+    return ", ".join(labels) if len(labels) > 0 else "none";
+}
+
+
+def _committed_actions(
+    plan: RecoveryPlan, before: GraphState, after: GraphState
+) -> list[RecoveryAction] {
+    committed: list[RecoveryAction] = [];
+    for action in plan.actions {
+        if action.action_type == RecoveryActionType.CLOSE_SWITCH {
+            for line in after.lines {
+                if line.switch_id == action.target_id and line.switch_closed {
+                    for prior in before.lines {
+                        if prior.switch_id == action.target_id and not prior.switch_closed {
+                            committed.append(action);
+                        }
+                    }
+                }
+            }
+        } elif action.action_type == RecoveryActionType.SHED_LOAD {
+            for load in after.loads {
+                if load.bus_id == action.target_id and load.deliberately_shed {
+                    for prior in before.loads {
+                        if prior.bus_id == action.target_id and not prior.deliberately_shed {
+                            committed.append(action);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return committed;
+}
+
+
+def _append_event(
+    events: list[AgentEvent], run_id: str, actor: AgentActor,
+    kind: AgentEventKind, outcome: AgentEventOutcome,
+    summary: str, evidence: str = ""
+) {
+    events.append(AgentEvent(
+        run_id=run_id, sequence=len(events) + 1, actor=actor,
+        kind=kind, outcome=outcome, summary=summary, evidence=evidence
+    ));
+}
+
+
+def _classify_outcome(triage: TriageResult) -> RecoveryOutcome {
+    if triage.status == TriageStatus.ALREADY_APPLIED {
+        return RecoveryOutcome.NO_ACTION;
+    }
+    critical = triage.after_state.metrics.critical_preserved_pct;
+    if triage.status == TriageStatus.APPLIED {
+        if critical is not None and critical < 99.999999 {
+            return RecoveryOutcome.INFEASIBLE;
+        }
+        if triage.after_state.metrics.unmet_kw <= 0.000001 {
+            return RecoveryOutcome.RECOVERED;
+        }
+        return RecoveryOutcome.PARTIAL;
+    }
+    if triage.status == TriageStatus.EXHAUSTED and critical is not None and critical < 99.999999 {
+        return RecoveryOutcome.INFEASIBLE;
+    }
+    return RecoveryOutcome.FAILED;
+}
+
+
+def _finalize_triage(
+    triage: TriageResult, run_id: str, started: float,
+    proposed_mode: ExecutionMode
+) -> TriageResult {
+    applied_actions: list[RecoveryAction] = [];
+    mode: ExecutionMode = ExecutionMode.NONE;
+    audit_fallback = False;
+    if triage.status == TriageStatus.APPLIED and triage.last_plan is not None {
+        applied_actions = _committed_actions(
+            triage.last_plan, triage.before_state, triage.after_state
+        );
+        mode = proposed_mode;
+    }
+
+    if triage.status == TriageStatus.APPLIED and triage.last_validation is not None {
+        try {
+            summary = audit_incident(
+                triage.fault_id, triage.before_state, triage.after_state,
+                applied_actions, triage.last_validation
+            );
+        } except Exception {
+            audit_fallback = True;
+            summary = factual_incident_summary(
+                triage.fault_id, triage.before_state, triage.after_state,
+                applied_actions
+            );
+        }
+    } elif triage.status == TriageStatus.ALREADY_APPLIED {
+        summary = f"Recovery for simulated fault {triage.fault_id} was already applied. This run committed no actions.";
+    } else {
+        summary = f"No recovery action was committed for simulated fault {triage.fault_id}.";
+    }
+
+    events: list[AgentEvent] = [];
+    _append_event(
+        events, run_id, AgentActor.MONITOR, AgentEventKind.OBSERVATION,
+        AgentEventOutcome.INFO, f"Observed simulated fault {triage.fault_id}",
+        f"generation={triage.before_state.generation_id}; revision={triage.before_state.revision}; " +
+        f"served_kw={triage.before_state.metrics.served_kw:.1f}"
+    );
+    for index in range(len(triage.attempts)) {
+        attempt = triage.attempts[index];
+        _append_event(
+            events, run_id, AgentActor.PLANNER, AgentEventKind.PROPOSAL,
+            AgentEventOutcome.INFO, f"Proposal {index + 1} submitted for validation",
+            f"Proposed actions (not applied): {_action_labels(attempt.plan.actions)}"
+        );
+        if attempt.validation is not None {
+            accepted = attempt.validation.accepted;
+            _append_event(
+                events, run_id, AgentActor.VALIDATOR, AgentEventKind.VALIDATION,
+                AgentEventOutcome.ACCEPTED if accepted else AgentEventOutcome.REJECTED,
+                (
+                    "Validator accepted the candidate" if attempt.validation.candidate is not None
+                    else "Validator accepted without candidate evidence"
+                ) if accepted else "Validator rejected the proposal",
+                (
+                    f"checked_revision={attempt.validation.checked_revision}; " +
+                    ("candidate present" if attempt.validation.candidate is not None else "no candidate")
+                ) if accepted else "; ".join(attempt.rejection_reasons)
+            );
+        } else {
+            _append_event(
+                events, run_id, AgentActor.SYSTEM, AgentEventKind.VALIDATION,
+                AgentEventOutcome.REJECTED, "Proposal did not reach validation",
+                "; ".join(attempt.rejection_reasons)
+            );
+        }
+        if index + 1 < len(triage.attempts) or (
+            triage.status == TriageStatus.PROVIDER_FAILED and
+            index + 1 == len(triage.attempts) and
+            len(triage.attempts) < MAX_PLAN_PROPOSALS
+        ) {
+            _append_event(
+                events, run_id, AgentActor.PLANNER, AgentEventKind.REVISION,
+                AgentEventOutcome.INFO, "Revision requested after rejection",
+                "; ".join(attempt.rejection_reasons)
+            );
+        }
+    }
+    if triage.status == TriageStatus.APPLIED {
+        _append_event(
+            events, run_id, AgentActor.SIMULATION, AgentEventKind.APPLICATION,
+            AgentEventOutcome.APPLIED, "Validated actions committed to the simulation",
+            f"Applied actions: {_action_labels(applied_actions)}; " +
+            f"revision={triage.before_state.revision}->{triage.after_state.revision}"
+        );
+        _append_event(
+            events, run_id, AgentActor.AUDITOR, AgentEventKind.AUDIT,
+            AgentEventOutcome.INFO if not audit_fallback else AgentEventOutcome.ERROR,
+            "Incident account based on committed state" if not audit_fallback else
+            "Auditor unavailable; factual summary used", summary
+        );
+    } elif triage.status == TriageStatus.ALREADY_APPLIED {
+        _append_event(
+            events, run_id, AgentActor.SYSTEM, AgentEventKind.AUDIT,
+            AgentEventOutcome.INFO, "No new recovery action was needed", summary
+        );
+    } else {
+        _append_event(
+            events, run_id, AgentActor.SYSTEM, AgentEventKind.FAILURE,
+            AgentEventOutcome.ERROR if triage.status in [TriageStatus.STALE, TriageStatus.PROVIDER_FAILED]
+            else AgentEventOutcome.REJECTED,
+            "Recovery run ended without an applied plan",
+            triage.failure_reason or "; ".join(triage.rejection_reasons)
+        );
+    }
+
+    recovery = RecoveryResult(
+        run_id=run_id, fault_id=triage.fault_id,
+        outcome=_classify_outcome(triage), execution_mode=mode,
+        applied_actions=applied_actions,
+        before_metrics=triage.before_state.metrics,
+        after_metrics=triage.after_state.metrics,
+        incident_summary=summary, proposal_count=triage.proposal_count,
+        revision_count=max(0, triage.proposal_count - 1),
+        elapsed_ms=max(0, int((perf_counter() - started) * 1000)),
+        failure_reason=triage.failure_reason or (
+            "; ".join(triage.rejection_reasons)
+            if triage.status not in [TriageStatus.APPLIED, TriageStatus.ALREADY_APPLIED]
+            else None
+        )
+    );
+    record_agent_run(run_id, triage.before_state.generation_id, events, recovery);
+    triage.run_id = run_id;
+    triage.recovery_result = recovery;
+    return triage;
+}
+
+
+def:pub run_triage(fault_id: str) -> TriageResult {
+    started = perf_counter();
+    run_id = str(uuid4());
+    triage = _run_triage_with_planner(fault_id, propose_plan);
+    return _finalize_triage(triage, run_id, started, ExecutionMode.PRIMARY_AI);
 }

@@ -4,7 +4,7 @@
 
 The run allows at most two proposals: an initial proposal and one revision. A validator rejection is passed back to the Planner as the validator's specific reasons plus the previous actions. A stale graph stops the run instead of revising from old facts. Unsupported or empty model output, provider failure, and exhausted proposals do not call application. A previously committed fault returns `already_applied` without another model call or mutation.
 
-`TriageResult` contains the fault ID, status, before/after `GraphState`, proposal count, final rejection reasons, last plan/validation, and every `TriageAttempt` in order. Statuses are `applied`, `already_applied`, `exhausted`, `stale`, and `provider_failed`. Only `applied` means this run committed actions. A provider error is reported with a generic failure reason so credentials and raw provider responses do not enter this result. The detailed event timeline, public response envelope, auditor, and fallback are later Member 2 tasks.
+`TriageResult` contains the fault ID, status, before/after `GraphState`, proposal count, final rejection reasons, last plan/validation, and every `TriageAttempt` in order. Statuses are `applied`, `already_applied`, `exhausted`, `stale`, and `provider_failed`. Only `applied` means this run committed actions. A provider error is reported with a generic failure reason so credentials and raw provider responses do not enter this result. Step 5 adds `run_id`, `recovery_result`, factual Auditor output, and polling events; see [the event handoff](MEMBER_2_AUDITOR_EVENTS.md).
 
 The Planner's `draft_recovery` now accepts an optional factual rejection-feedback string through `propose_plan(facts, rejection_feedback="")`; existing first-proposal callers remain valid. The model still cannot set the fault or snapshot version fields.
 
@@ -12,4 +12,4 @@ Step 4 runtime verification on WSL 2 with native Jac 0.34.13 is in `tests/orches
 
 One live Gemini run used `jac run scripts/step04_live_smoke.jac` with the ignored local `.env`. For `FAULT-LINE-A-H`, the model proposed `CLOSE_SWITCH SW-TIE-B-H` in one proposal. The validator accepted it and `run_triage` returned `applied`; authoritative revision changed 1 → 2, served demand changed 145 → 160 kW, and critical demand preserved reached 100%. The script prints status, IDs, validation, and metrics. This is one successful provider run, not a reliability claim or a test of all three fault scenarios.
 
-The internal `_run_triage_with_planner` accepts a typed proposal function for deterministic checks. Public `run_triage(fault_id)` still calls the real Planner. The detailed event timeline, public result envelope, auditor, total time budget, and fallback remain later Member 2 tasks.
+The internal `_run_triage_with_planner` accepts a typed proposal function for deterministic checks. Public `run_triage(fault_id)` still calls the real Planner. The total time budget and fallback remain later Member 2 tasks.
