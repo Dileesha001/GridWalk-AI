@@ -1,13 +1,15 @@
-"""Manual Gemini smoke: one fictional line fault through the full Step 4 flow."""
+"""Manual live recovery smoke; accepts a fictional fault ID, defaulting to line failure."""
 
 import from agents.orchestration { run_triage }
 import from agents.events { get_agent_events }
 import from grid.fixture { FAULT_LINE_A_H }
 import from grid.simulation { reset_simulation }
+import from sys { argv }
 
 with entry:__main__ {
     reset_simulation();
-    result = run_triage(FAULT_LINE_A_H);
+    fault_id = argv[1] if len(argv) > 1 else FAULT_LINE_A_H;
+    result = run_triage(fault_id);
     print(f"status={result.status}; proposals={result.proposal_count}");
     if result.recovery_result is not None {
         print(f"execution_mode={result.recovery_result.execution_mode}; outcome={result.recovery_result.outcome}");

@@ -17,11 +17,11 @@ The dashboard follows the healthy Figma recovery console, using Jac components a
 
 **Fixed previews** remain available separately, including rerouting with shedding. Changing a preview does not call the simulator or agents. Click a bus or use the component selector to inspect capacity/dispatch, priority/service, and independent physical-fault/switch states. In live mode, inject a fault and choose Run recovery. Confirmed events appear when the synchronous server request finishes; the console does not invent intermediate progress.
 
-See the [implementation order and current task statuses](docs/Dashboard_Implementation_Status.md), [live simulation verification](docs/Live_Grid_Integration.md), and [recovery integration checks](docs/Recovery_Integration.md). Fresh browser verification and live-provider recovery verification remain pending.
+See the [task chart](docs/Dashboard_Implementation_Status.md), [current verification evidence](docs/Verification_2026-10-17.md), and [demo and submission package](docs/Submission_Package.md). Product recovery browser checks and the sealed build pass. Live AI-provider success requires valid credentials; the verified product runs used deterministic fallback.
 
-## Next integration decisions
-
-Agree the graph projection, recovery plan/action schema, validation feedback, event ordering, run IDs, and reset/stale-plan behavior before connecting modules. The open choices and required checks are in [the development guide](docs/GridWalk_AI_Development_Guide.md).
+The graph projection, recovery contracts, ordered run evidence, reset generations,
+and stale-revision guards are integrated. Historical planning decisions are in
+[the development guide](docs/GridWalk_AI_Development_Guide.md).
 
 ## Local setup
 
@@ -40,7 +40,7 @@ Open `http://localhost:8011` in the Windows browser. Keep Linux dependencies sep
 
 For hot reload, use `jac start --dev main.jac --port 8001`; open `http://localhost:8001`, with the API on port 8002. To build the web client separately, stop the dev server and run `jac build --client web`.
 
-For live recovery calls, keep `GOOGLE_API_KEY` and optional Groq backup `GROQ_API_KEY` in the ignored `.env` at the running project's root. Do not commit keys. The preview checks do not require a live model call. See [Member 2's provider budgets and pending fallback handoff](docs/MEMBER_2_FALLBACK_BUDGETS.md).
+For live recovery calls, keep `GOOGLE_API_KEY` and optional Groq backup `GROQ_API_KEY` in the ignored `.env` at the running project's root. Existing environment variables take precedence over `.env`; restart the server after updating credentials. Do not commit keys. Run `jac run scripts/verify_provider_plan.jac primary` (or `backup`) to verify an actual typed proposal without applying it. The preview checks need no live model. See [provider budgets and fallback](docs/MEMBER_2_FALLBACK_BUDGETS.md).
 
 The verification script covers client syntax/types, foundation/topology/live-decoder regressions, simulation/validation/application regressions, the web shell, and the sealed app artifact. Current WSL results are recorded in the [setup guide](docs/WSL_Setup.md). Historical Windows checks remain in earlier milestone notes; these checks do not establish end-to-end recovery or deployment.
 

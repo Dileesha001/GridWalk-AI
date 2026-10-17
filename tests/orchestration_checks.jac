@@ -4,9 +4,10 @@ import from agents.monitor { MonitorFacts }
 import from agents.orchestration { _run_triage_with_planner, _run_triage_with_providers, TriageStatus }
 import from agents.events { get_agent_events }
 import from jaclang.byllm.lib { ByLLMError }
-import from grid.fixture { FAULT_LINE_A_H }
+import from grid.fixture { FAULT_LINE_A_H, FAULT_INSUFFICIENT_BACKUP, fixture_lines }
+import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, reset_simulation }
-import from shared.contracts { AgentEventKind, ExecutionMode, RecoveryAction, RecoveryActionType, RecoveryPlan }
+import from shared.contracts { AgentEventKind, ExecutionMode, RecoveryAction, RecoveryActionType, RecoveryPlan, RecoveryOutcome }
 import from time { perf_counter }
 
 def _provider_failure(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
@@ -210,4 +211,37 @@ test "provider timeout leaves the faulted graph unchanged" {
     assert result.proposal_count == 0 and len(result.attempts) == 0;
     assert get_grid_state().revision == result.before_state.revision;
     assert get_grid_state().metrics.served_kw == result.before_state.metrics.served_kw;
+}
+
+test "provider failures still permit partial recovery during backup shortage" {
+    reset_simulation();
+    result = _run_triage_with_providers(
+        FAULT_INSUFFICIENT_BACKUP, _provider_failure, _provider_failure
+    );
+    assert result.status == TriageStatus.APPLIED;
+    assert result.recovery_result is not None;
+    assert result.recovery_result.outcome == RecoveryOutcome.PARTIAL;
+    assert result.recovery_result.execution_mode == ExecutionMode.DETERMINISTIC;
+    assert result.after_state.metrics.served_kw == 155.0;
+    assert result.after_state.metrics.unmet_kw == 50.0;
+    assert result.after_state.metrics.critical_preserved_pct == 100.0;
+}
+
+test "unavailable alternate path leaves no feasible fallback and commits nothing" {
+    reset_simulation();
+    inject_fault(FAULT_LINE_A_H);
+    grid = [root -->[?:Grid]][0];
+    for line in fixture_lines(grid) {
+        if line.line_id == "TIE-B-H" { line.physically_faulted = True; }
+    }
+    before = get_grid_state();
+    result = _run_triage_with_providers(FAULT_LINE_A_H, _provider_failure, _provider_failure);
+    assert result.status == TriageStatus.EXHAUSTED;
+    assert result.recovery_result is not None;
+    assert result.recovery_result.outcome == RecoveryOutcome.INFEASIBLE;
+    assert result.recovery_result.execution_mode == ExecutionMode.NONE;
+    assert len(result.recovery_result.applied_actions) == 0;
+    assert result.after_state.revision == before.revision;
+    assert result.after_state.metrics.served_kw == before.metrics.served_kw;
+    assert not any([event.kind == AgentEventKind.APPLICATION for event in get_agent_events(result.run_id)]);
 }
