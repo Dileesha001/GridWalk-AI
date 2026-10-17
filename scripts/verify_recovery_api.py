@@ -25,6 +25,20 @@ def main():
         return values(envelope["data"]["result"])
 
     try:
+        call("reset_simulation")
+        call("inject_fault", fault_id="FAULT-LINE-A-H")
+        observed = call("get_grid_state")
+        stale = call("run_triage", fault_id="FAULT-LINE-A-H",
+                     generation_id=observed["generation_id"],
+                     expected_revision=observed["revision"] + 1)
+        assert stale["status"] == "stale", stale
+        assert stale["recovery_result"]["applied_actions"] == []
+        assert stale["recovery_result"]["execution_mode"] == "none"
+        after_stale = call("get_grid_state")
+        assert after_stale["revision"] == observed["revision"]
+        assert after_stale["metrics"] == observed["metrics"]
+        print("PASS stale revision rejected without changing grid")
+
         for fault, outcome in [("FAULT-LINE-A-H", "partial"),
                                ("FAULT-SOURCE-A", "partial"),
                                ("FAULT-INSUFFICIENT-BACKUP", "infeasible")]:

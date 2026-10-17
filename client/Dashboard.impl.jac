@@ -35,7 +35,10 @@ impl Dashboard.operate(operation: str) -> None {
         if operation == "inject" { await inject_live_fault(scenario); }
         elif operation == "reset" { await reset_live_grid(); }
         elif operation == "recover" and liveGrid {
-            triage = await run_live_recovery(liveGrid.active_fault_ids[0]);
+            triage = await run_live_recovery(
+                liveGrid.active_fault_ids[0], liveGrid.generation_id,
+                liveGrid.revision
+            );
             if triage.before_state.generation_id != expected_generation or triage.after_state.generation_id != expected_generation { raise ValueError("The grid was reset during this recovery. Refresh the current state."); }
             completed = triage.recovery_result;
             expected_revision = triage.after_state.revision;
