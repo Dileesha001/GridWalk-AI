@@ -17,7 +17,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 | 4 | `member2/04-validation-revision` and `member2/04b-orchestration-runtime` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | Fixed paths passed 8/8; one live line-fault plan validated and applied; 04b branch ready for PR |
 | 5 | `member2/05-auditor-events` | Auditor, ordered events, final result and read API | Task 4; Member 3 envelope agreement | Merged; Jac compile passed; runtime polling and Member 3 integration pending |
 | 6 | `member2/06-fallback-budgets` | Request budgets, backup provider, deterministic fallback handling | Tasks 4–5; tested provider access | Merged; live Groq proposal and backup application verified on Jac 0.34.13 |
-| 7 | `member2/07-scenario-integration` | Three scenario handoff and failure-path evidence | Members 1 and 3 integrations | Server integration and fixed scenario checks complete; dashboard adapter merged; browser recovery pending |
+| 7 | `member2/07-scenario-integration` | Three scenario handoff and failure-path evidence | Members 1 and 3 integrations | Server integration, fixed scenarios, and one live HTTP backup run verified; dashboard adapter merged; browser recovery pending |
 
 ## 1. Shared recovery contracts
 

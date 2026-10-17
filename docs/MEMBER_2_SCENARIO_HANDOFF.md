@@ -18,6 +18,8 @@ The `partial` outcome means unmet demand remains. The simulated fault is never d
 
 Verification on 2026-10-17 after merging Member 3's dashboard: `jac check . -n` passed 60 files, the recovery client decoder suite passed 9 checks, and `jac build --client web main.jac` succeeded. After Member 1 added the canonical fallback name, the paired `agents/orchestration.jac` and `grid/fallback.jac` check passed and `jac test tests/*_checks.jac` passed all 54 server checks. All used Jac 0.34.13 in WSL. The three-scenario smoke script completed separately with the metrics above. The browser recovery flow has not been rerun against this branch.
 
+A separate local HTTP smoke used the committed app in an isolated Linux directory because the Windows-mounted `.jac/data/anchor_store.db` returned a SQLite disk I/O error on startup. On `FAULT-LINE-A-H`, the public `run_triage` endpoint returned `applied`, `backup_ai`, `partial`, one proposal, revision 1→2, and served demand 145→160 kW. `get_agent_events(run_id)` returned six ordered events with one fallback and one application; `get_recovery_result(run_id)` and `get_grid_state()` agreed on the final 160 kW, and the physical fault remained active. The local test server was reset and stopped. No browser was exposed to the automation session, so visual dashboard recovery remains unverified.
+
 ## Member 3 adapter contract
 
 - Call `run_triage(fault_id)` and retain `TriageResult.run_id`; display `recovery_result` and authoritative `after_state` from that response.
