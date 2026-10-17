@@ -7,9 +7,15 @@ import from jaclang.byllm.lib { ByLLMError }
 import from grid.fixture { FAULT_LINE_A_H }
 import from grid.simulation { get_grid_state, inject_fault, reset_simulation }
 import from shared.contracts { AgentEventKind, ExecutionMode, RecoveryAction, RecoveryActionType, RecoveryPlan }
+import from time { perf_counter }
 
 def _provider_failure(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
     raise ByLLMError("Provider unavailable");
+}
+
+
+def _provider_timeout(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
+    raise TimeoutError("Provider request timed out");
 }
 
 
@@ -182,4 +188,26 @@ test "deterministic fallback applies after both AI providers fail" {
         "deterministic" in event.summary.lower()
         for event in get_agent_events(result.run_id)
     ]);
+}
+
+test "expired request budget prevents another provider call" {
+    reset_simulation();
+    result = _run_triage_with_planner(
+        FAULT_LINE_A_H, _unexpected_call, perf_counter() - 1.0
+    );
+    assert result.status == TriageStatus.BUDGET_EXHAUSTED;
+    assert result.proposal_count == 0 and len(result.attempts) == 0;
+    assert result.failure_reason == "Recovery deadline left no time for another provider request";
+    assert get_grid_state().revision == 1;
+    assert get_grid_state().active_fault_ids == [FAULT_LINE_A_H];
+}
+
+test "provider timeout leaves the faulted graph unchanged" {
+    reset_simulation();
+    result = _run_triage_with_planner(FAULT_LINE_A_H, _provider_timeout);
+    assert result.status == TriageStatus.PROVIDER_FAILED;
+    assert result.failure_reason == "Planner request timed out";
+    assert result.proposal_count == 0 and len(result.attempts) == 0;
+    assert get_grid_state().revision == result.before_state.revision;
+    assert get_grid_state().metrics.served_kw == result.before_state.metrics.served_kw;
 }

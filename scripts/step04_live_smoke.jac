@@ -1,6 +1,7 @@
 """Manual Gemini smoke: one fictional line fault through the full Step 4 flow."""
 
 import from agents.orchestration { run_triage }
+import from agents.events { get_agent_events }
 import from grid.fixture { FAULT_LINE_A_H }
 import from grid.simulation { reset_simulation }
 
@@ -8,6 +9,11 @@ with entry:__main__ {
     reset_simulation();
     result = run_triage(FAULT_LINE_A_H);
     print(f"status={result.status}; proposals={result.proposal_count}");
+    if result.recovery_result is not None {
+        print(f"execution_mode={result.recovery_result.execution_mode}; outcome={result.recovery_result.outcome}");
+        events = get_agent_events(result.run_id);
+        print(f"run_id={result.run_id}; ordered_events={len(events)}; committed_actions={len(result.recovery_result.applied_actions)}");
+    }
     print(f"revisions={result.before_state.revision}->{result.after_state.revision}");
     print(f"served_kw={result.before_state.metrics.served_kw}->{result.after_state.metrics.served_kw}");
     print(f"critical_preserved_pct={result.after_state.metrics.critical_preserved_pct}");
