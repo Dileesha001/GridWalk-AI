@@ -23,8 +23,8 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | 1. Graph contract and healthy fixture | `member1/01-graph-contract-fixture` | — | Implemented; contract review pending |
 | 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
-| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | To do |
-| 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
+| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Implemented; ready for review |
+| 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | Implemented; ready for review |
 | 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
 
 ## 1. Graph contract and healthy fixture
@@ -59,10 +59,13 @@ Implementation evidence: `grid/allocation.jac` previews whole-load allocations w
 
 ## 4. Candidate validation and feedback
 
+- The [Member 2 handoff](MEMBER_2_CONTRACTS.md#member-1-task-45-handoff-ready-to-implement) specifies action target IDs, `validate_plan` and application signatures, allocation projection, and the generation/revision stale-plan rule. Member 2's other tasks do not block this validator.
 - Import Member 2's canonical typed recovery-plan/action contract from `shared/contracts.jac` rather than creating a competing schema in `grid/validation.jac`.
 - Implement non-mutating validation in `grid/validation.jac` for the entire candidate state: action types and IDs, target kinds, numbers, switch/fault logic, conducting paths, source and line ratings, conservation, and priority policy.
 - Reject deliberate Tier 1 shedding and return specific, factual reasons that support a Planner revision.
 - **Done when:** invalid candidates leave authoritative state unchanged; Jac tests cover unknown IDs/actions, faulted and open paths, isolated loads, overloads, and duplicate capacity claims.
+
+Implementation evidence: `grid/validation.jac` now exposes `validate_plan(RecoveryPlan) -> ValidationResult` using the merged Member 2 contract. It checks the active fault, generation, and revision before translating typed actions into a non-mutating allocation preview. The existing complete-state validator checks capacities, paths, flow conservation, whole-load service, and priority policy. Accepted results include copied candidate allocation and metrics calculated from that candidate. `tests/validation_checks.jac` covers accepted rerouting and shedding, stale/reset plans, invalid action kinds and targets, duplicate actions, physical faults, critical shedding, and forged allocations. [Validation handoff](MEMBER_1_VALIDATION.md) records the API and limits. `jac check .` passed for 22 Jac files with existing Member 3 client warnings; `jac test tests/validation_checks.jac -v` passed 12 tests.
 
 ## 5. Approved application and metrics
 
@@ -70,6 +73,8 @@ Implementation evidence: `grid/allocation.jac` previews whole-load allocations w
 - Commit switch and service changes atomically from the validated candidate, then recompute allocation, status, and metrics. A successful reroute must retain the physical fault.
 - Compute before/after metrics in `grid/metrics.jac`: critical demand preserved, deliberate shed kW, total unmet kW, available capacity, dispatch, and active faults/violations.
 - **Done when:** rejected or stale candidates do not mutate state; repeated application cannot duplicate changes; metrics match the committed graph.
+
+Implementation evidence: `grid/simulation.jac` now exposes `apply_approved_plan(RecoveryPlan) -> GraphState`. It calls the current validator, commits only an accepted candidate's switch, dispatch, service, shed, and line transfer values, increments the revision once, and projects authoritative metrics from those committed values. `grid/graph.jac` carries the committed readings and `grid/validation.jac` preserves earlier deliberate sheds during a later plan preview. `tests/application_checks.jac` covers accepted rerouting, physical-fault retention, rejected/infeasible plans, duplicate application, reset generation, deliberate shedding, projection/metric agreement, and reset after recovery. See [application handoff](MEMBER_1_APPLICATION.md). `jac check grid/` and `jac check tests/` passed; `jac test -d tests/ -v` passed 28 tests.
 
 ## 6. Scenario verification and integration
 

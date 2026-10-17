@@ -1,14 +1,10 @@
-"""Task 2 fault controls and truthful pre-recovery graph projection.
-
-No switching or recovery allocation is performed here yet. A source zone whose
-unchanged local demand exceeds its current capacity is conservatively tripped.
-Task 3 replaces that policy with deterministic candidate allocation/routing.
-"""
+"""Fault controls, approved recovery application, and authoritative grid state."""
 
 import from grid.graph { Grid, GridBus, Source, Load, PowerLine, conducts }
 import from grid.fixture { build_healthy_fixture, fixture_sources, fixture_loads, fixture_lines, fault_scenario }
 import from grid.metrics { compute_metrics }
-import from shared.contracts { GraphState, SourceView, LoadView, LineView }
+import from shared.contracts { GraphState, SourceView, LoadView, LineView, RecoveryPlan, RecoveryActionType }
+import from grid.validation { validate_plan }
 
 def _ensure_grid() -> Grid {
     existing = [root -->[?:Grid]];
@@ -60,17 +56,23 @@ def _project(grid: Grid) -> GraphState {
     dispatched_by_id: dict[str, float] = {};
     transfer_by_id: dict[str, float] = {line.line_id: 0.0 for line in lines};
 
-    # Unchanged baseline switches: serve complete source zones only when feasible.
-    for source in sources {
-        reachable = _reachable_load_ids(source.bus_id, lines, loads_by_id);
-        local_demand = sum([loads_by_id[load_id].demand_kw for load_id in reachable]);
-        if local_demand <= source.capacity_kw {
-            for load_id in reachable { served_by_id[load_id] = loads_by_id[load_id].demand_kw; }
-            dispatched_by_id[source.bus_id] = _subtree_flow(
-                source.bus_id, lines, served_by_id, transfer_by_id, set()
-            );
-        } else {
-            dispatched_by_id[source.bus_id] = 0.0;
+    if grid.allocation_committed {
+        for source in sources { dispatched_by_id[source.bus_id] = source.dispatched_kw; }
+        for load in loads { served_by_id[load.bus_id] = load.served_kw; }
+        for line in lines { transfer_by_id[line.line_id] = line.transfer_kw; }
+    } else {
+        # Before recovery, conservatively trip any unchanged source zone that exceeds its rating.
+        for source in sources {
+            reachable = _reachable_load_ids(source.bus_id, lines, loads_by_id);
+            local_demand = sum([loads_by_id[load_id].demand_kw for load_id in reachable]);
+            if local_demand <= source.capacity_kw {
+                for load_id in reachable { served_by_id[load_id] = loads_by_id[load_id].demand_kw; }
+                dispatched_by_id[source.bus_id] = _subtree_flow(
+                    source.bus_id, lines, served_by_id, transfer_by_id, set()
+                );
+            } else {
+                dispatched_by_id[source.bus_id] = 0.0;
+            }
         }
     }
 
@@ -95,8 +97,9 @@ def _project(grid: Grid) -> GraphState {
         served = served_by_id[load.bus_id];
         load_views.append(LoadView(
             bus_id=load.bus_id, label=load.label, demand_kw=load.demand_kw,
-            tier=load.tier, served_kw=served, deliberately_shed=False,
-            status="powered" if served == load.demand_kw else "unmet"
+            tier=load.tier, served_kw=served,
+            deliberately_shed=load.deliberately_shed if grid.allocation_committed else False,
+            status="shed" if grid.allocation_committed and load.deliberately_shed else "powered" if served == load.demand_kw else "unmet"
         ));
     }
 
@@ -112,7 +115,8 @@ def _project(grid: Grid) -> GraphState {
     active_fault_ids: list[str] = [];
     if grid.active_fault_id != "" { active_fault_ids.append(grid.active_fault_id); }
     return GraphState(
-        grid_id=grid.grid_id, revision=grid.revision, active_fault_ids=active_fault_ids,
+        grid_id=grid.grid_id, generation_id=grid.generation_id,
+        revision=grid.revision, active_fault_ids=active_fault_ids,
         sources=source_views, loads=load_views, lines=line_views,
         metrics=compute_metrics(source_views, load_views, line_views, active_fault_ids)
     );
@@ -139,6 +143,43 @@ def:pub inject_fault(fault_id: str) -> GraphState {
         if line.line_id in scenario.fault_line_ids { line.physically_faulted = True; }
     }
     grid.active_fault_id = fault_id;
+    grid.revision += 1;
+    return _project(grid);
+}
+
+
+"""Revalidate and commit one current plan; rejected plans leave the graph unchanged."""
+def:pub apply_approved_plan(plan: RecoveryPlan) -> GraphState {
+    existing = [root -->[?:Grid]];
+    if len(existing) == 0 { raise ValueError("No grid is initialized"); }
+    grid = existing[0];
+    validation = validate_plan(plan);
+    if not validation.accepted or validation.candidate is None {
+        raise ValueError("Plan rejected: " + "; ".join(validation.reasons));
+    }
+    current = [root -->[?:Grid]];
+    if len(current) != 1 or current[0].generation_id != validation.checked_generation_id or current[0].revision != validation.checked_revision or current[0].active_fault_id != plan.fault_id {
+        raise ValueError("Plan became stale before application");
+    }
+    candidate = validation.candidate;
+    switches = {line.switch_id: line for line in fixture_lines(grid)};
+    for action in plan.actions {
+        if action.action_type == RecoveryActionType.CLOSE_SWITCH {
+            switches[action.target_id].switch_closed = True;
+        }
+    }
+    shed_ids = set(candidate.deliberately_shed_ids);
+    for source in fixture_sources(grid) {
+        source.dispatched_kw = candidate.source_dispatch_kw[source.bus_id];
+    }
+    for load in fixture_loads(grid) {
+        load.served_kw = candidate.served_load_kw[load.bus_id];
+        load.deliberately_shed = load.bus_id in shed_ids;
+    }
+    for line in fixture_lines(grid) {
+        line.transfer_kw = candidate.line_transfer_kw[line.line_id];
+    }
+    grid.allocation_committed = True;
     grid.revision += 1;
     return _project(grid);
 }
