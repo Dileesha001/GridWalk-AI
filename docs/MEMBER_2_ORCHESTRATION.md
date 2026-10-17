@@ -1,0 +1,11 @@
+# Member 2 Step 4 orchestration handoff
+
+`agents/orchestration.jac` defines `run_triage(fault_id: str) -> TriageResult` as an in-process Jac operation. It injects or reuses the named fault, obtains Monitor facts, requests a typed Planner proposal, calls Member 1's non-mutating `validate_plan`, and calls `apply_approved_plan` only for an accepted nonempty plan with a candidate allocation. Member 1's application operation revalidates the current fault, generation, revision, and candidate before committing.
+
+The run allows at most two proposals: an initial proposal and one revision. A validator rejection is passed back to the Planner as the validator's specific reasons plus the previous actions. A stale graph stops the run instead of revising from old facts. Unsupported or empty model output, provider failure, and exhausted proposals do not call application. A previously committed fault returns `already_applied` without another model call or mutation.
+
+`TriageResult` contains the fault ID, status, before/after `GraphState`, proposal count, final rejection reasons, last plan/validation, and every `TriageAttempt` in order. Statuses are `applied`, `already_applied`, `exhausted`, `stale`, and `provider_failed`. Only `applied` means this run committed actions. A provider error is reported with a generic failure reason so credentials and raw provider responses do not enter this result. The detailed event timeline, public response envelope, auditor, and fallback are later Member 2 tasks.
+
+The Planner's `draft_recovery` now accepts an optional factual rejection-feedback string through `propose_plan(facts, rejection_feedback="")`; existing first-proposal callers remain valid. The model still cannot set the fault or snapshot version fields.
+
+Jac compilation passed for the changed Planner and orchestration files. Runtime validation/revision/application behavior has not been exercised in this branch. The next verification needs one labeled fixed or live accepted proposal, a specific rejected proposal with revision, an exhausted path, and stale/duplicate behavior. Do not present a model proposal as an applied recovery until `TriageStatus.APPLIED` and Member 1's returned graph state confirm it.
