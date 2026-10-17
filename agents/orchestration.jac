@@ -505,11 +505,15 @@ def _finalize_triage(
 }
 
 
-def:pub run_triage(fault_id: str) -> TriageResult {
+def _run_triage_with_providers(
+    fault_id: str,
+    primary_planner: Callable[[MonitorFacts, str], RecoveryPlan],
+    backup_planner: Callable[[MonitorFacts, str], RecoveryPlan]
+) -> TriageResult {
     started = perf_counter();
     run_id = str(uuid4());
     deadline = started + MAX_RECOVERY_SECONDS;
-    primary = _run_triage_with_planner(fault_id, propose_plan, deadline);
+    primary = _run_triage_with_planner(fault_id, primary_planner, deadline);
     primary.attempt_modes = [ExecutionMode.PRIMARY_AI for _ in primary.attempts];
     if primary.status not in [TriageStatus.PROVIDER_FAILED, TriageStatus.EXHAUSTED] {
         return _finalize_triage(primary, run_id, started, ExecutionMode.PRIMARY_AI);
@@ -527,7 +531,7 @@ def:pub run_triage(fault_id: str) -> TriageResult {
         return _finalize_triage(primary, run_id, started, ExecutionMode.NONE);
     }
     backup = _run_triage_with_planner(
-        fault_id, propose_backup_plan, deadline, primary.before_state
+        fault_id, backup_planner, deadline, primary.before_state
     );
     if backup.status == TriageStatus.STALE and backup.proposal_count == 0 {
         primary.status = TriageStatus.STALE;
@@ -538,4 +542,9 @@ def:pub run_triage(fault_id: str) -> TriageResult {
     }
     combined = _combine_provider_runs(primary, backup);
     return _finalize_triage(combined, run_id, started, ExecutionMode.BACKUP_AI);
+}
+
+
+def:pub run_triage(fault_id: str) -> TriageResult {
+    return _run_triage_with_providers(fault_id, propose_plan, propose_backup_plan);
 }
