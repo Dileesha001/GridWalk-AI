@@ -21,17 +21,21 @@ Agree the graph projection, recovery plan/action schema, validation feedback, ev
 
 ## Local setup
 
-Verified on Windows with Python 3.14.7, Jac 0.16.7, and jac-client 0.3.25. From the repository root:
+Use Ubuntu in WSL 2 and the native Jac 0.34.13 binary. From the repository root in PowerShell, enter WSL with `wsl`, then run:
 
-```powershell
-python -m venv .venv
-.venv/Scripts/python.exe -m pip install jaclang==0.16.7 jac-client==0.3.25
-.venv/Scripts/jac.exe install
-.venv/Scripts/jac.exe start --dev main.jac --port 8001
+```bash
+curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.34.13
+export PATH="$HOME/.local/bin:$PATH"
+jac --version                      # must report 0.34.13
+jac install                        # project dependencies; Jac itself comes from the binary
+jac check . -n
+jac start --dev main.jac --port 8001
 ```
 
-Open `http://localhost:8001`. Development mode recompiles changed client modules and uses port 8002 for the API. Installation requires network access, and the client build requires access to Bun's dependency cache. The topology was compiled, served, and inspected in Chrome at desktop, tablet, and phone widths. This verifies the preview; it does not verify end-to-end recovery or deployment.
+Open `http://localhost:8001`. Development mode recompiles changed client modules and uses port 8002 for the API. Keep the real Gemini key in the ignored root `.env` as `GOOGLE_API_KEY=...`; never commit it. Installation requires network access. The older Windows Python/pip commands in milestone notes document checks done before this migration and are not the current setup.
 
-Run topology checks with `.venv/Scripts/python.exe scripts/check_foundation.py topology`. See [topology preview notes](docs/Topology_Preview.md) for the display states and limitations.
+See [topology preview notes](docs/Topology_Preview.md) for the display states and limitations. Earlier browser and runtime checks were performed on Jac 0.16.7; they are not evidence of end-to-end recovery on 0.34.13.
 
 See [Member 3 progress and checks](docs/Member_3_Progress.md) for the tested foundation and current integration limits.
+
+See [Jac 0.34.13 migration notes](docs/JAC_034_MIGRATION.md) for the WSL compiler and client build results.

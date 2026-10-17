@@ -44,6 +44,8 @@ Those checks do not replace the project's deterministic validator.
 
 ## Verification
 
+The commands and browser results below record the original Jac 0.16.7 milestone. For the current WSL 2 / Jac 0.34.13 setup, use the repository README.
+
 ```powershell
 .venv/Scripts/jac.exe check main.jac client/Dashboard.cl.jac client/Topology.cl.jac client/TopologyDiagram.cl.jac client/TopologyDetails.cl.jac client/topology_examples.cl.jac client/topology_layout.cl.jac client/topology_tests.cl.jac -n
 .venv/Scripts/python.exe scripts/check_foundation.py topology

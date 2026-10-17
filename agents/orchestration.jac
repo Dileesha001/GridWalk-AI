@@ -6,7 +6,7 @@ Member 2 tasks. This module never writes graph entities directly.
 
 import from agents.monitor { MonitorFacts, inspect_grid }
 import from agents.planner { propose_plan }
-import from byllm.lib { ByLLMError }
+import from jaclang.byllm.lib { ByLLMError }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, apply_approved_plan }
 import from grid.validation { validate_plan }
