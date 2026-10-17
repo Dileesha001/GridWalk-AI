@@ -12,4 +12,4 @@ Checks completed in Ubuntu 24.04 under WSL 2 with `jac --version` reporting 0.34
 
 The latest dashboard merge also required its event-handler lambdas to use 0.34.13 syntax and its browser helper to assign the module `glob` directly. Dashboard page metadata now lives under `[client.app_meta_data]`.
 
-These checks establish installation, compilation, and client bundling. The prior live Gemini proposal, browser inspection, and runtime milestone checks were performed under Jac 0.16.7. Repeat the relevant runtime checks under 0.34.13 as the team connects the remaining features. Historical milestone documents retain their original environment and results.
+These checks establish installation, compilation, and client bundling. The prior browser inspection and early runtime milestones were performed under Jac 0.16.7. Member 2's Step 4 runtime branch later repeated a live Gemini line-fault recovery and passed the server test directory under 0.34.13; see `docs/MEMBER_2_ORCHESTRATION.md`. Browser and remaining scenario checks still need repetition as the team connects the remaining features. Historical milestone documents retain their original environment and results.
