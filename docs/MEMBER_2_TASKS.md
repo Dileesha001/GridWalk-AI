@@ -12,7 +12,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 | --- | --- | --- | --- | --- |
 | 0 | `member2/00-task-list` | This task list and handoff sequence | Current `dev` | Ready for PR |
 | 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Member 1 handoff; Member 3 event transport later | Member 1 validation/application handoff ready on `member2/01b-validation-handoff` |
-| 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | To do |
+| 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | Code implemented; runtime verification pending |
 | 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | To do |
 | 4 | `member2/04-validation-revision` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | To do |
 | 5 | `member2/05-auditor-events` | Auditor, ordered events, final result and read API | Task 4; Member 3 envelope agreement | To do |
