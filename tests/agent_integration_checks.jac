@@ -5,7 +5,7 @@ import from uuid { uuid4 }
 import from agents.events { get_agent_events, get_recovery_result }
 import from agents.monitor { MonitorFacts }
 import from agents.orchestration {
-    _finalize_triage, _run_deterministic_fallback, _run_triage_with_planner,
+    _combine_deterministic_run, _finalize_triage, _run_deterministic_fallback, _run_triage_with_planner,
     _run_triage_with_providers, TriageStatus
 }
 import from grid.fixture {
@@ -216,4 +216,14 @@ test "expired deadline prevents deterministic generation and application" {
     assert result.status == TriageStatus.BUDGET_EXHAUSTED;
     assert result.proposal_count == 0;
     assert get_grid_state().revision == before.revision;
+    primary = _run_triage_with_planner(
+        FAULT_LINE_A_H, _failed_provider, before_state=before
+    );
+    combined = _combine_deterministic_run(primary, result);
+    assert combined.deterministic_after_attempt is None;
+    final = _finalize_triage(
+        combined, str(uuid4()), perf_counter(), ExecutionMode.DETERMINISTIC
+    );
+    assert len([event for event in get_agent_events(final.run_id)
+                if event.kind == AgentEventKind.FALLBACK]) == 0;
 }

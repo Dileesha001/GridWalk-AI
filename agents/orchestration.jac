@@ -375,8 +375,13 @@ def _combine_deterministic_run(previous: TriageResult, fallback: TriageResult) -
     ];
     combined.backup_after_attempt = previous.backup_after_attempt;
     combined.backup_reason = previous.backup_reason;
-    combined.deterministic_after_attempt = len(previous.attempts);
-    combined.deterministic_reason = "AI planning did not apply a recovery plan";
+    if not (
+        fallback.status == TriageStatus.BUDGET_EXHAUSTED and
+        fallback.failure_reason == "Recovery deadline expired before deterministic planning"
+    ) {
+        combined.deterministic_after_attempt = len(previous.attempts);
+        combined.deterministic_reason = "AI planning did not apply a recovery plan";
+    }
     return combined;
 }
 
