@@ -11,6 +11,7 @@
     --fault: #bb343e;
     --shed: #936500;
     --rerouted: #245cba;
+    --wire-open: #7a8b9c;
     font-family: "Segoe UI", system-ui, sans-serif;
     color: var(--ink);
     background: var(--background);
@@ -89,3 +90,23 @@ footer p { margin: 0; }
 @media (max-width: 1050px) { .workspace-grid { grid-template-columns: minmax(0, 1fr); }.right-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }.topology-placeholder { min-height: 340px; }.workspace-label { display: none; }.metric { padding: 18px; } }
 @media (max-width: 650px) { .app-header { padding: 14px 16px; flex-wrap: wrap; gap: 6px 15px; }nav { order: 3; flex-basis: 100%; }nav a { flex: 1; }main { padding: 24px 16px 18px; }.page-heading { margin-bottom: 20px; }.preview-notice { display: block; padding: 13px 15px; }.preview-notice p { margin-top: 5px; }.metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }.metric { padding: 15px; }.metric p { font-size: 11px; }.metric strong { font-size: 28px; }.metric strong small { font-size: 15px; }.right-column { grid-template-columns: minmax(0, 1fr); }.panel { padding: 18px; }.topology-placeholder { min-height: 290px; }.legend { gap: 14px; }.connection-status { font-size: 11px; }.brand { font-size: 21px; }footer { display: block; }footer p + p { margin-top: 8px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+/* Topology preview and accessible inspection. */
+.topology-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.topology-toolbar > div { min-width: 0; width: 290px; max-width: 100%; }
+.topology-count { font: 11px ui-monospace, monospace; color: var(--muted); padding-bottom: 12px; }
+.topology-toolbar select, .component-picker select { background: var(--surface); color: var(--ink); cursor: pointer; }
+.snapshot-note, .diagram-help { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.snapshot-note { margin: 13px 0; }
+.diagram-help { font-size: 11px; margin: 12px 0; }
+.topology-fault { border-left: 3px solid var(--fault); background: #fff3f3; color: #922d36; padding: 10px 12px; font-size: 12px; }
+.topology-scroll { overflow-x: auto; background-color: #f9fbfd; background-image: radial-gradient(#dbe3ec .8px, transparent .8px); background-size: 20px 20px; border: 1px solid #e5ebf2; border-radius: 7px; }
+.topology-svg { display: block; width: 100%; min-width: 900px; height: auto; }
+.topology-wire rect { fill: #f9fbfd; }.topology-wire text { text-anchor: middle; font: 9px ui-monospace, monospace; fill: var(--muted); }.topology-wire .wire-fault { fill: var(--fault); font-weight: 650; }
+.topology-node { color: var(--ink); }.topology-node rect { fill: var(--surface); stroke: currentColor; stroke-width: 1.5; }.topology-node text { text-anchor: middle; font-size: 12px; font-weight: 600; fill: var(--ink); }.topology-node .node-id { font: 9px ui-monospace, monospace; fill: var(--muted); }.topology-node .node-measurement { font: 11px ui-monospace, monospace; }.topology-node .node-status { font-size: 9px; font-weight: 500; fill: var(--muted); }
+.topology-node.powered { color: var(--powered); }.topology-node.fault { color: var(--fault); }.topology-node.shed, .topology-node.source-warning { color: var(--shed); }.topology-node.rerouted { color: var(--rerouted); }.selected-node rect { stroke-width: 3; }
+.open-legend { font-family: ui-monospace, monospace; }
+.component-picker { max-width: 440px; margin-top: 22px; }
+.topology-inspector { border: 1px solid var(--border); background: #f8fafc; padding: 16px; border-radius: 7px; margin-top: 12px; }
+.topology-inspector h3 { margin: 0 0 13px; }.topology-inspector dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px 20px; margin: 0; }.topology-inspector dt { color: var(--muted); font-size: 11px; margin-bottom: 5px; }.topology-inspector dd { font-size: 12px; margin: 0; overflow-wrap: anywhere; line-height: 1.5; }
+@media (max-width: 650px) { .topology-toolbar { display: block; }.topology-toolbar > div { width: 100%; }.topology-count { display: block; margin-top: 12px; padding-bottom: 0; }.topology-inspector dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -1,7 +1,8 @@
-"""Step 4: responsive layout only. Controls and live integration are not enabled."""
+"""Responsive shell with read-only topology snapshots. Live controls remain disabled."""
 
 import "./dashboard.css";
 import from .ShellPanel { ShellPanel, EmptyState }
+import from .Topology { Topology }
 
 def:pub Dashboard -> JsxElement {
     return <div className="dashboard">
@@ -13,7 +14,7 @@ def:pub Dashboard -> JsxElement {
         </header>
         <main id="workspace" tabIndex={-1}>
             <div className="page-heading"><div><p className="eyebrow">MICROGRID DECISION SUPPORT</p><h1>Grid recovery workspace</h1><p className="muted">Protect critical demand. Make every decision visible.</p></div><span className="workspace-label">SIMULATION CONSOLE <span>01</span></span></div>
-            <div className="preview-notice" role="note"><strong>Layout preview</strong><p>No grid state or recovery run is loaded. Metrics and controls will become available as integration progresses.</p></div>
+            <div className="preview-notice" role="note"><strong>Topology preview</strong><p>The network shows fixed display snapshots. No live simulation or recovery run is connected; metric cards and scenario controls remain unavailable.</p></div>
             <section className="metric-grid" aria-label="Recovery metrics">
                 <article className="metric"><p>Critical demand served</p><strong aria-label="Not available">—</strong><span>Share of Tier 1 demand served</span></article>
                 <article className="metric"><p>Shed / unmet demand</p><strong aria-label="Not available">— <small>/ — kW</small></strong><span>Deliberate shedding / all unserved demand</span></article>
@@ -22,11 +23,7 @@ def:pub Dashboard -> JsxElement {
             </section>
             <div className="workspace-grid">
                 <div id="network" className="network-column">
-                    <ShellPanel eyebrow="NETWORK OVERVIEW" title="Microgrid topology" badge="Awaiting state">
-                        <div className="topology-placeholder"><EmptyState title="Your microgrid will appear here" description="Inspect sources, prioritized loads, and the physical lines connecting them."/></div>
-                        <div className="legend" aria-label="Planned grid status legend"><span><i className="powered" aria-hidden="true"></i>Powered</span><span><i className="fault" aria-hidden="true"></i>Fault</span><span><i className="shed" aria-hidden="true"></i>Shed</span><span><i className="rerouted" aria-hidden="true"></i>Rerouted</span></div>
-                        <p className="panel-note">Fictional facilities · Simplified connectivity and lossless kW allocation</p>
-                    </ShellPanel>
+                    <Topology/>
                 </div>
                 <aside className="right-column" aria-label="Scenario and agent workspace">
                     <ShellPanel eyebrow="SCENARIO CONTROLS" title="Test a disruption" badge="01–03">
