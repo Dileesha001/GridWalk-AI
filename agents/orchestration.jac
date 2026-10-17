@@ -7,7 +7,7 @@ import from agents.events { record_agent_run }
 import from agents.monitor { MonitorFacts, inspect_grid }
 import from agents.planner { propose_plan, propose_backup_plan, REQUEST_TIMEOUT_SECONDS }
 import from jaclang.byllm.lib { ByLLMError }
-import from grid.fallback { generate_fallback_plan }
+import from grid.fallback { deterministic_fallback_plan }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, apply_approved_plan }
 import from grid.validation { validate_plan }
@@ -293,7 +293,7 @@ def _run_deterministic_fallback(before: GraphState, deadline: float) -> TriageRe
                        failure_reason="Recovery deadline expired before deterministic planning");
     }
     try {
-        plan = generate_fallback_plan(before);
+        plan = deterministic_fallback_plan(before);
     } except Exception {
         return _result(fault_id, TriageStatus.FALLBACK_FAILED, before, 0, [],
                        failure_reason="Deterministic candidate generation failed");

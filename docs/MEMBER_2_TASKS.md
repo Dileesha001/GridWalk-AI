@@ -2,7 +2,7 @@
 
 Scope: implement the Jac Monitor, Planner, and Auditor walkers, typed recovery proposals, bounded AI calls, recovery orchestration, factual events, and final results. Member 1 owns graph arithmetic, validation, approved application, and deterministic fallback candidate generation. Member 3 owns the dashboard and client adapter. The governing rule is: **AI proposes; deterministic Jac code validates; the simulation engine applies.**
 
-Member 1's validator, approved-plan application, and `generate_fallback_plan` are merged. The Jac 0.34.13 migration and Member 2 Steps 4–6 are merged; fixed-proposal and live Gemini/Groq recovery paths have been exercised. Step 7 integrates the deterministic candidate and checks event polling and scenarios. Member 3's live dashboard adapter is merged; fresh browser recovery and concurrent-run behavior remain unverified.
+Member 1's validator, approved-plan application, and `deterministic_fallback_plan` are merged. The Jac 0.34.13 migration and Member 2 Steps 4–6 are merged; fixed-proposal and live Gemini/Groq recovery paths have been exercised. Step 7 integrates the deterministic candidate and checks event polling and scenarios. Member 3's live dashboard adapter is merged; fresh browser recovery and concurrent-run behavior remain unverified.
 
 ## Branch workflow
 
@@ -69,7 +69,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 
 ## Immediate handoffs
 
-1. **Member 1:** validation, approved application, and the non-mutating `generate_fallback_plan` candidate are merged. Step 7 routes that candidate through Member 1's validator and application operation.
+1. **Member 1:** validation, approved application, and the non-mutating `deterministic_fallback_plan` candidate are merged. Step 7 routes that candidate through Member 1's validator and application operation.
 2. **Member 3:** live recovery transport is merged. Use [Step 7 scenario and adapter handoff](MEMBER_2_SCENARIO_HANDOFF.md) alongside the [Step 5 polling contract](MEMBER_2_AUDITOR_EVENTS.md) for fresh browser recovery, concurrent-run, and stale-response verification.
 3. **Provider access:** Gemini typed output and one accepted line-fault run passed on Jac 0.34.13 before Step 6. The local `GROQ_API_KEY` passed a typed proposal and a full backup application check; see [Step 6 evidence](MEMBER_2_FALLBACK_BUDGETS.md). Keep keys outside the repository.
 
