@@ -70,3 +70,11 @@ For the last case, `SRC-R` still dispatches 25 kW to its own loads, leaving only
 `shed_kw` is zero in these readings because no deliberate recovery shedding has occurred. `unmet_kw` includes demand disconnected by a fault or the conservative pre-recovery trip. An active fault remains in `active_fault_ids` and counts as one scenario fault; a physical line fault also remains on its `LineView`.
 
 `inject_fault` accepts one of the three exact IDs. Repeating the same ID returns the unchanged state/revision. An unknown ID or a different fault before reset raises `ValueError` without mutation. `reset_simulation` rebuilds the baseline, clears the fault, and returns revision 0. A successful new injection increments the revision to 1. The graph projection fields and these reset semantics should be reviewed with Members 2 and 3 before their consumers depend on them.
+
+## Task 3 allocation preview
+
+`grid/allocation.jac` provides `preview_allocation(grid, switch_overrides, shed_load_ids)`. It returns source dispatch, whole-load service, signed line transfers, and unserved IDs without changing graph state. A positive line transfer follows the line's `from_bus_id` → `to_bus_id`; a negative transfer flows in reverse. The engine only routes on healthy lines whose switch is closed in the candidate, including requested switch overrides. Closing a switch never clears a physical fault.
+
+Loads are attempted in Tier 1, Tier 2, Tier 3 order, then by stable load ID. For each load, the engine chooses a shortest feasible path from a source with enough remaining capacity; source ID breaks route ties. It requires the entire load to fit, counts every previously allocated load against source and line capacity, and uses a 0.000001 kW comparison tolerance. If no route fits, that load remains unserved. An explicit `shed_load_ids` entry is skipped and recorded; Task 4's validator will enforce which deliberate sheds are allowed. This deterministic greedy method produces a feasible candidate, not a guarantee of maximum served demand or optimal routing.
+
+The preview does not change the current-state readings in `get_grid_state()`. Those continue to describe the committed, unswitched pre-recovery graph. Tasks 4–5 will validate a plan against a preview and apply only an approved result. Tests check conservation at every bus and all per-source and per-line limits.
