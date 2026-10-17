@@ -1,0 +1,12 @@
+.jac/
+.venv/
+.uv-cache/
+.uv-python/
+node_modules/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
