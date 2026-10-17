@@ -1,47 +1,119 @@
 # GridWalk AI
 
-Jac-first microgrid recovery decision-support simulator. The dashboard reads live grid state, supports three repeatable fault scenarios and reset, and connects recovery orchestration with ordered agent evidence and measured incident results.
+GridWalk AI is a Jac web application for exploring recovery decisions in a fictional microgrid. Inject a fault, inspect the resulting network state, run a recovery, and see which actions were proposed, validated, and actually applied. The dashboard reports measured service before and after each run, including demand that remains unmet.
 
-## Layout
+The governing rule is simple: **AI proposes; deterministic Jac code validates; the simulation applies only approved changes.** The application is a decision-support simulator, not a controller for real electrical equipment.
 
-| Path | Owner | Purpose |
-| --- | --- | --- |
-| `main.jac` | Member 3 | Full-stack client entry point |
-| `client/` | Member 3 | Jac dashboard and future client adapter |
-| `grid/` | Member 1 | Graph model, fixture, faults, validation, application, metrics |
-| `agents/` | Member 2 | Monitor, Planner, Auditor, recovery orchestration |
-| `shared/contracts.jac` | Shared | One authoritative location for ratified typed contracts |
-| `docs/` | Team | Development guide, agent guidelines, member handoffs |
+## What the application does
 
-The dashboard follows the healthy Figma recovery console, using Jac components and style dictionaries with locally bundled design assets and fonts. It starts in **Live simulation** mode: topology, supply, and metrics come from the canonical server projection. Choose a fault scenario, inject it, inspect the result, and reset before trying another scenario. Each mutation is followed by a fresh server read. Duplicate submissions are blocked; a failed confirmation keeps the last confirmed state and requires refresh before another change.
+- Models a twelve-bus network with sources, prioritized loads, power lines, switches, and normally open ties.
+- Provides three repeatable scenarios: reduced source capacity, a faulted line, and insufficient backup supply.
+- Lets users inspect topology, component state, active faults, served demand, unmet demand, and critical-load preservation.
+- Tries Gemini planning, then an independent Groq backup, then a deterministic candidate when AI planning does not commit a plan and time remains.
+- Validates connectivity, source and line capacities, load priorities, and the current grid revision before any recovery action is committed.
+- Shows ordered agent events, validator feedback, applied actions, execution mode, and a factual incident summary. Reset restores the healthy fixture.
 
-**Fixed previews** remain available separately, including rerouting with shedding. Changing a preview does not call the simulator or agents. Click a bus or use the component selector to inspect capacity/dispatch, priority/service, and independent physical-fault/switch states. In live mode, inject a fault and choose Run recovery. Confirmed events appear when the synchronous server request finishes; the console does not invent intermediate progress.
+The dashboard also includes fixed topology previews for exploring example states without changing the live simulation.
 
-See the [task chart](docs/Dashboard_Implementation_Status.md), [current verification evidence](docs/Verification_2026-10-17.md), and [demo and submission package](docs/Submission_Package.md). Product recovery browser checks and the sealed build pass. Live AI-provider success requires valid credentials; the verified product runs used deterministic fallback.
+## Architecture
 
-The graph projection, recovery contracts, ordered run evidence, reset generations,
-and stale-revision guards are integrated. Historical planning decisions are in
-[the development guide](docs/GridWalk_AI_Development_Guide.md).
+```mermaid
+flowchart LR
+    User[User] --> UI[Jac dashboard]
+    UI <--> API[Jac server endpoints]
 
-## Local setup
+    API <--> Grid[Graph and simulation<br/>grid/]
+    API --> Orchestrator[Recovery orchestration<br/>agents/]
+    Orchestrator --> Monitor[Monitor walker]
+    Monitor --> Grid
+    Orchestrator --> Planner[Planner walker]
+    Planner --> Models[Gemini and Groq]
+    Orchestrator --> Fallback[Deterministic candidate<br/>grid/fallback.jac]
+    Orchestrator --> Validator[Deterministic validator<br/>grid/validation.jac]
+    Validator --> Application[Approved-plan application]
+    Application --> Grid
+    Orchestrator --> Evidence[Auditor, events, and results]
+    Evidence --> API
+```
 
-The required build environment is **Ubuntu on WSL 2 with native Jac 0.34.13**. See [WSL setup and verification](docs/WSL_Setup.md) for the pinned, checksum-verified installer and source sync. Jac itself comes from the native binary; the earlier Windows Python/pip setup is superseded.
+`shared/contracts.jac` defines the typed grid snapshots, recovery plans, validation results, events, and final outcomes exchanged between these modules. The server graph is authoritative; the client renders confirmed server state.
 
-Inside WSL, from the Linux build copy:
+### Recovery path
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Dashboard
+    participant API as Jac API
+    participant Grid as Grid simulation
+    participant Monitor as Monitor walker
+    participant Planner as AI Planner
+    participant Fallback as Deterministic fallback
+    participant Guard as Validator
+    participant Record as Auditor and events
+
+    User->>UI: Select and inject a fault
+    UI->>API: inject_fault(fault_id)
+    API->>Grid: Apply simulated fault
+    Grid-->>API: Current graph and metrics
+    API-->>UI: Confirmed grid state
+    User->>UI: Run recovery
+    UI->>API: run_triage(fault_id, generation, revision)
+    API->>Monitor: Inspect the current fault
+    Monitor-->>API: Graph facts and affected demand
+    loop AI proposals until committed or exhausted
+        API->>Planner: Request a typed proposal
+        Planner-->>API: Proposed actions
+        API->>Guard: Validate against current grid
+        Guard-->>API: Approval or rejection reasons
+        opt Approved and still current
+            API->>Grid: Apply approved plan
+        end
+    end
+    opt No AI plan committed and time remains
+        API->>Fallback: Generate a candidate from the current snapshot
+        Fallback-->>API: Candidate or no feasible plan
+        API->>Guard: Validate any candidate
+        Guard-->>API: Approval or rejection reasons
+        opt Approved and still current
+            API->>Grid: Apply approved plan
+        end
+    end
+    API->>Record: Record outcome and measured evidence
+    API-->>UI: Result and confirmed grid state
+    UI->>API: Read ordered events by run ID
+    API-->>UI: Event history
+```
+
+Rejected, stale, or expired candidates leave the graph unchanged. A switch action cannot repair a physically faulted line. Recovery may preserve all critical loads while leaving some other demand unmet; the dashboard reports that as a partial outcome.
+
+## Run locally
+
+Use **Ubuntu on WSL 2** and the native **Jac 0.34.13** release. Work from a checkout in the WSL Linux filesystem for local server runs. The repository includes a pinned installer; [WSL setup](docs/WSL_Setup.md) covers the Windows-to-WSL workflow.
 
 ```bash
-jac --version                      # must report 0.34.13
-jac install                        # install project dependencies
-bash scripts/verify_wsl.sh
+bash scripts/install_jac_wsl.sh
+export PATH="$HOME/.local/bin:$PATH"
+jac install
 jac start main.jac --port 8011
 ```
 
-Open `http://localhost:8011` in the Windows browser. Keep Linux dependencies separate from the old Windows `.venv/` and `.jac/`. After editing the Windows repository, sync its source into the Linux build copy before checking again. Installation requires network access and access to Bun's dependency cache.
+Open `http://localhost:8011`. To use live AI planning, set `GOOGLE_API_KEY` and `GROQ_API_KEY` in an ignored `.env` file at the running project root; see [.env.example](.env.example). The deterministic fallback can still be attempted when provider planning does not produce an applied plan and the recovery deadline permits it.
 
-For hot reload, use `jac start --dev main.jac --port 8001`; open `http://localhost:8001`, with the API on port 8002. To build the web client separately, stop the dev server and run `jac build --client web`.
+## Project structure
 
-For live recovery calls, keep `GOOGLE_API_KEY` and optional Groq backup `GROQ_API_KEY` in the ignored `.env` at the running project's root. Existing environment variables take precedence over `.env`; restart the server after updating credentials. Do not commit keys. Run `jac run scripts/verify_provider_plan.jac primary` (or `backup`) to verify an actual typed proposal without applying it. The preview checks need no live model. See [provider budgets and fallback](docs/MEMBER_2_FALLBACK_BUDGETS.md).
+| Path | Responsibility |
+| --- | --- |
+| `main.jac` | Registers server endpoints and mounts the dashboard |
+| `client/` | Jac dashboard, topology, controls, and response decoding |
+| `grid/` | Graph fixture, faults, allocation, validation, fallback, and application |
+| `agents/` | Monitor, AI Planner, orchestration, Auditor, and run evidence |
+| `shared/contracts.jac` | Typed contracts shared across the application |
+| `tests/` | Fixed scenario and integration checks |
+| `docs/` | Detailed design, handoffs, setup, and verification notes |
 
-The verification script covers client syntax/types, foundation/topology/live-decoder regressions, simulation/validation/application regressions, the web shell, and the sealed app artifact. Current WSL results are recorded in the [setup guide](docs/WSL_Setup.md). Historical Windows checks remain in earlier milestone notes; these checks do not establish end-to-end recovery or deployment.
+## Verification and scope
 
-See [topology preview notes](docs/Topology_Preview.md) for display states and limitations, [progress and checks](docs/Member_3_Progress.md) for historical milestones, the [design review](docs/Design_Review.md) for console checks, and the [Jac 0.34.13 migration notes](docs/JAC_034_MIGRATION.md) for the upstream migration results.
+From WSL, run `jac check . --nowarn` for a project-wide compiler check. The repository also includes Jac checks in `tests/` and the full setup verification command `bash scripts/verify_wsl.sh`.
+
+The simulator uses a simplified, lossless kW allocation model. It does not model voltage, frequency, protection behavior, or equipment control. Recovery events are displayed after a run completes; they are not streamed as live progress.
