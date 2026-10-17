@@ -410,9 +410,24 @@ def _finalize_triage(
 }
 
 
-def:pub run_triage(fault_id: str) -> TriageResult {
+def:pub run_triage(
+    fault_id: str, generation_id: str = "", expected_revision: int = -1
+) -> TriageResult {
     started = perf_counter();
     run_id = str(uuid4());
+    current = get_grid_state();
+    if generation_id and (
+        current.generation_id != generation_id or
+        current.revision != expected_revision or
+        current.active_fault_ids != [fault_id]
+    ) {
+        stale = _result(
+            fault_id, TriageStatus.STALE, current, 0,
+            ["Recovery request used an outdated grid generation or revision"],
+            failure_reason="Grid changed before recovery started"
+        );
+        return _finalize_triage(stale, run_id, started, ExecutionMode.NONE);
+    }
     triage = _run_triage_with_planner(fault_id, propose_plan);
     return _finalize_triage(triage, run_id, started, ExecutionMode.PRIMARY_AI);
 }

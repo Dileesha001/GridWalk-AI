@@ -4,7 +4,7 @@ Never use this entry for production or a live AI demonstration. No provider is
 called; applied results are labeled deterministic. The product entry is main.jac.
 """
 import from agents.monitor { MonitorFacts }
-import from agents.orchestration { _run_triage_with_planner, _finalize_triage, TriageResult }
+import from agents.orchestration { _run_triage_with_planner, _finalize_triage, _result, TriageResult, TriageStatus }
 import from agents.events { get_agent_events, get_recovery_result }
 import from grid.simulation { get_grid_state, inject_fault, reset_simulation }
 import from shared.contracts { ExecutionMode, RecoveryPlan, RecoveryAction, RecoveryActionType }
@@ -28,8 +28,20 @@ def fixture_proposal(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
         grid_revision=facts.graph_state.revision, actions=actions,
         explanation="Fixed verification proposal, not AI output");
 }
-def:pub run_triage(fault_id: str) -> TriageResult {
+def:pub run_triage(fault_id: str, generation_id: str = "", expected_revision: int = -1) -> TriageResult {
+    current = get_grid_state();
     started = perf_counter();
+    if generation_id and (
+        current.generation_id != generation_id or current.revision != expected_revision or
+        current.active_fault_ids != [fault_id]
+    ) {
+        stale = _result(
+            fault_id, TriageStatus.STALE, current, 0,
+            ["Recovery request used an outdated grid generation or revision"],
+            failure_reason="Grid changed before recovery started"
+        );
+        return _finalize_triage(stale, str(uuid4()), started, ExecutionMode.NONE);
+    }
     sleep(0.35);
     triage = _run_triage_with_planner(fault_id, fixture_proposal);
     return _finalize_triage(triage, str(uuid4()), started, ExecutionMode.DETERMINISTIC);

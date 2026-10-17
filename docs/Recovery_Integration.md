@@ -6,7 +6,9 @@ because the client uses raw fetch. The UI displays ordered evidence, execution
 mode, committed actions, proposal/revision counts, and server-measured before/after
 metrics. Fixed previews remain separate.
 
-Controls block duplicate requests and conflicting mutations. Generation, revision,
+Controls block duplicate requests and conflicting mutations. Recovery requests carry
+the generation and revision that the user saw; the server rejects mismatches before
+fault injection or planning. Generation, revision,
 run identity, complete event sequence, and metric checks reject mismatched evidence.
 Failed confirmation retains the last confirmed grid and requires refresh. Recovery
 uses a 120-second client timeout; timing out does not cancel server processing.
@@ -24,7 +26,8 @@ Verification on 2026-10-17 with native Jac 0.34.13 on WSL:
   partial recovery; source recovery produced five events and partial recovery;
   insufficient backup produced seven events and an infeasible outcome with no
   committed actions. Results matched fresh server metrics. Reset cleared the
-  current-generation event feed.
+  current-generation event feed. A request with a stale revision returned a
+  structured stale result and left the grid revision and metrics unchanged.
 
 Reproduce the HTTP checks using a separate local test server:
 
@@ -41,3 +44,6 @@ Run the verification helper only against that fixture. Product startup remains
 Browser automation was unavailable in this session. Fresh recovery browser checks,
 live-provider access, provider fallback, measured performance, and deployment are
 not established by these checks.
+
+The expected-generation/revision guard is verified by the Jac checks and the HTTP
+stale-request scenario above.
