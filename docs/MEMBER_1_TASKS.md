@@ -8,7 +8,8 @@ The existing `dev` branch provides the Jac 0.16.7 fullstack scaffold and owns th
 |---|---|
 | `grid/graph.jac` | Member 1: typed source/load nodes and power-line edges; Task 1 |
 | `grid/fixture.jac` | Member 1: healthy fixture and named fault definitions; Tasks 1–2 |
-| `grid/simulation.jac` | Member 1: fault/reset, allocation, and approved application; Tasks 2–3, 5 |
+| `grid/simulation.jac` | Member 1: fault/reset and approved application; Tasks 2, 5 |
+| `grid/allocation.jac` | Member 1: pure allocation/routing preview; Task 3 |
 | `grid/validation.jac` | Member 1: non-mutating candidate validation; Task 4 |
 | `grid/metrics.jac` | Member 1: server-computed metrics; Tasks 1, 5 |
 | `shared/contracts.jac` | Shared: one typed contract home; Member 1 owns `GraphState`, Member 2 owns recovery-plan types |
@@ -21,7 +22,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 |---|---|---|---|
 | 1. Graph contract and healthy fixture | `member1/01-graph-contract-fixture` | — | Implemented; contract review pending |
 | 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
-| 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | To do |
+| 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
 | 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | To do |
 | 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
 | 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
@@ -48,11 +49,13 @@ Implementation evidence: `grid/fixture.jac` defines the three fault inputs, `gri
 
 ## 3. Deterministic allocation and routing
 
-- Implement lossless kW allocation over conducting paths in `grid/simulation.jac`, including source dispatch and per-line transfer from `grid/graph.jac` entities.
+- Implement lossless kW allocation over conducting paths in `grid/allocation.jac`, including source dispatch and per-line transfer from `grid/graph.jac` entities.
 - Include a backup source's existing commitments before calculating spare capacity; prevent double-counting supply or served loads.
 - Choose and document whole-load versus partial service, routing/tie behavior, numeric tolerance, and Tier 3 before Tier 2 shedding order.
 - Keep candidate calculations separate from authoritative graph mutation.
 - **Done when:** allocations obey per-source and per-line capacities and flow conservation; isolated demand stays unserved; all derived values come from one allocation.
+
+Implementation evidence: `grid/allocation.jac` previews whole-load allocations without graph mutation. `tests/allocation_checks.jac` checks conservation at every bus, source/line ratings, physical faults, open switches, alternate routes, reverse tie flow, and backup commitments. The preview remains separate from `get_grid_state()` until validated application is implemented in Tasks 4–5.
 
 ## 4. Candidate validation and feedback
 
