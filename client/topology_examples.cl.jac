@@ -3,7 +3,7 @@
 sv import from ..shared.contracts { GraphState, SourceView, LoadView, LineView, GridMetrics }
 
 def:pub topology_example(example: str = "baseline") -> GraphState {
-    # IDs, baseline values and wiring match docs/MEMBER_1_FIXTURE.md.
+    # IDs, baseline values and wiring match grid/fixture.jac.
     fault = example in ["line_fault", "rerouted"];
     rerouted = example == "rerouted";
     source_fault = example == "source_fault";

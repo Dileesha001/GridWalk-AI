@@ -110,7 +110,7 @@ Open `http://localhost:8011`. To use live AI planning, set `GOOGLE_API_KEY` and 
 | `agents/` | Monitor, AI Planner, orchestration, Auditor, and run evidence |
 | `shared/contracts.jac` | Typed contracts shared across the application |
 | `tests/` | Fixed scenario and integration checks |
-| `docs/` | Detailed design, handoffs, setup, and verification notes |
+| `docs/` | WSL setup and local verification instructions |
 
 ## Verification and scope
 
