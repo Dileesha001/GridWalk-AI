@@ -4,8 +4,8 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease; then
     echo "Run these checks inside WSL." >&2
     exit 1
 fi
-if ! jac --version | grep -Eq '^jac 0\.34\.13[[:space:]]'; then
-    echo "This project requires native Jac 0.34.13." >&2
+if ! jac --version | grep -Eq '^jac 0\.34\.23[[:space:]]'; then
+    echo "This project requires native Jac 0.34.23." >&2
     exit 1
 fi
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."

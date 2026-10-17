@@ -6,22 +6,22 @@ if ! grep -qi microsoft /proc/sys/kernel/osrelease; then
     echo "Run this installer inside WSL." >&2
     exit 1
 fi
-if command -v jac >/dev/null && jac --version | grep -Eq '^jac 0\.34\.13[[:space:]]'; then
+if command -v jac >/dev/null && jac --version | grep -Eq '^jac 0\.34\.23[[:space:]]'; then
     jac --version
     exit 0
 fi
 
 case "$(uname -m)" in
-    x86_64) architecture=x86_64; checksum=cb59ebef48a238762e024a05d192d0743312c9f7818974c8eaeb326acbc4848e ;;
-    aarch64) architecture=aarch64; checksum=912b501248cb7c010fea719713cc26fe7110543861dea9f59b7917c2a4d4b2f2 ;;
+    x86_64) architecture=x86_64; checksum=bb93ea1920b776592af2e38f6cd0cb1db1f71c7afdadf7ba841210b645212ce6 ;;
+    aarch64) architecture=aarch64; checksum=0e4ada659c89b8be572203109203c84e0b799f5dfcf409be5f4b404da070cfbf ;;
     *) echo "Unsupported WSL architecture." >&2; exit 1 ;;
 esac
 
 install_dir="${JAC_INSTALL_DIR:-$HOME/.local/bin}"
-download_file="$(mktemp /tmp/gridwalk-jac-0.34.13.XXXXXX)"
+download_file="$(mktemp /tmp/gridwalk-jac-0.34.23.XXXXXX)"
 trap 'rm -f -- "$download_file"' EXIT
 curl --fail --location --show-error \
-    "https://github.com/jaseci-labs/jac/releases/download/v0.34.13/jac-0.34.13-linux-$architecture" \
+    "https://github.com/jaseci-labs/jac/releases/download/v0.34.23/jac-0.34.23-linux-$architecture" \
     --output "$download_file"
 printf '%s  %s\n' "$checksum" "$download_file" | sha256sum --check --status
 mkdir -p -- "$install_dir"

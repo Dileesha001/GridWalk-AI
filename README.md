@@ -89,7 +89,7 @@ Rejected, stale, or expired candidates leave the graph unchanged. A switch actio
 
 ## Run locally
 
-Use **Ubuntu on WSL 2** and the native **Jac 0.34.13** release. Work from a checkout in the WSL Linux filesystem for local server runs. The repository includes a pinned installer; [WSL setup](docs/WSL_Setup.md) covers the Windows-to-WSL workflow.
+Use **Ubuntu on WSL 2** and the native **Jac 0.34.23** release. Work from a checkout in the WSL Linux filesystem for local server runs. The repository includes a pinned installer; [WSL setup](docs/WSL_Setup.md) covers the Windows-to-WSL workflow.
 
 ```bash
 bash scripts/install_jac_wsl.sh

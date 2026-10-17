@@ -4,10 +4,11 @@ version = "0.1.0"
 description = "Jac microgrid recovery decision-support simulator"
 entry-point = "main.jac"
 kind = "web-app"
-jac-version = "==0.34.13"
+jac-version = "==0.34.23"
 
 [dependencies]
 python-dotenv = ">=1.0,<2"
+litellm = ">=1.0,<2"
 
 [dependencies.npm]
 react = "^18.2.0"

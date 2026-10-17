@@ -8,12 +8,14 @@ import sys
 import jaclang  # Registers Jac's import machinery.
 from jaclang.runtimelib.cl_test_runner import compile_cl_module
 from jaclang.runtimelib.client.bun_installer import get_bun
+from jaclang.compiler.passes.ecmascript.jac_runtime_js import stage_jac_prelude_package
 
 
 def main():
     root = Path(__file__).resolve().parents[1]
     build = root / ".jac" / "foundation-tests"
     build.mkdir(parents=True, exist_ok=True)
+    stage_jac_prelude_package(str(build))
     bun = get_bun()
     if not bun:
         raise SystemExit("Run jac install first to install the project-local Bun runtime.")

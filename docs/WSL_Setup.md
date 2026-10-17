@@ -1,6 +1,6 @@
 # Local development with WSL
 
-GridWalk AI uses the native Jac 0.34.13 release on Ubuntu under WSL 2. Keep the running project on the Linux filesystem: the simulator stores its graph in SQLite, which can fail when served from a Windows-mounted directory.
+GridWalk AI uses the [native Jac 0.34.23 release](https://github.com/jaseci-labs/jac/releases/tag/v0.34.23) on Ubuntu under WSL 2. Keep the running project on the Linux filesystem: the simulator stores its graph in SQLite, which can fail when served from a Windows-mounted directory.
 
 ## Prepare a Linux working copy
 
@@ -20,7 +20,7 @@ From the Linux checkout or build copy:
 ```bash
 bash scripts/install_jac_wsl.sh
 export PATH="$HOME/.local/bin:$PATH"
-jac --version                 # 0.34.13
+jac --version                 # 0.34.23
 jac install
 jac start main.jac --port 8011
 ```
@@ -35,4 +35,4 @@ To use live providers, set `GOOGLE_API_KEY` and `GROQ_API_KEY` in a local `.env`
 bash scripts/verify_wsl.sh
 ```
 
-The script checks Jac source, runs the repository's runtime and scenario checks, and builds the web client and sealed app. It requires Jac 0.34.13 and does not call live model providers. The `Dockerfile` also installs the pinned native Jac release for container deployments.
+The script checks Jac source, runs the repository's runtime and scenario checks, and builds the web client and sealed app. It requires Jac 0.34.23 and does not call live model providers. The `Dockerfile` also installs the pinned native Jac release for container deployments.
