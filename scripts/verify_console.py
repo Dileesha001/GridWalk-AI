@@ -25,6 +25,8 @@ try:
     browser.cmd_open(session, base_url, '1440x1160')
     browser.cmd_navigate(session, base_url)
     browser.cmd_wait(session, '#network-title')
+    browser.cmd_wait(session, '#preview-mode:not([disabled])')
+    browser.cmd_click(session, '#preview-mode')
     time.sleep(2)
     assets = evaluate("[...document.images].map(x=>({loaded:x.complete&&x.naturalWidth>0,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height,x:x.getBoundingClientRect().x-x.parentElement.getBoundingClientRect().x,y:x.getBoundingClientRect().y-x.parentElement.getBoundingClientRect().y}))")
     assert len(assets) == 16 and all(x['loaded'] for x in assets), assets
@@ -56,7 +58,6 @@ try:
         assert evaluate("document.querySelector('#topology-component').value") == identity
         assert evaluate("document.activeElement.id") == 'topology-component'
     # Native keyboard navigation changes fixed examples without any backend call.
-    browser.cmd_click(session, '#preview-tools summary')
     browser.cmd_click(session, '#topology-example')
     for expected, critical, served in [('source_fault','42.9%','100 kW'),('line_fault','42.9%','145 kW'),('rerouted','100%','180 kW')]:
         browser.cmd_press(session, 'ArrowDown')
