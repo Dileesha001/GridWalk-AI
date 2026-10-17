@@ -1,6 +1,6 @@
 # Member 2 recovery contract handoff
 
-`shared/contracts.jac` is the single typed source for the recovery objects below. The Member 1 validator and application handoff is settled here. Member 1 still owns its implementation; the Member 3 event transport remains a later integration decision.
+`shared/contracts.jac` is the single typed source for the recovery objects below. The Member 1 validator and application handoff is settled here. Step 5 proposes polling event transport and the result API in [its Member 3 handoff](MEMBER_2_AUDITOR_EVENTS.md).
 
 The contract compiled with Jac 0.16.7; the installed byLLM plugin is 0.6.19. No provider call or recovery run has been exercised by this branch.
 
@@ -38,7 +38,7 @@ The contract compiled with Jac 0.16.7; the installed byLLM plugin is 0.6.19. No 
 ## Integration decisions to confirm
 
 - **Member 1:** `validate_plan` input/output signature, projection of `AllocationResult`, explicit rejection reasons, and approved application signature. Confirm stale revision and duplicate application behavior. `ValidationResult` is proposed here to unblock this handoff; the validator remains Member 1's code.
-- **Member 3:** whether `get_agent_events` returns all events or filters by `run_id`, whether polling is enough, and the `run_triage` response envelope. The event fields and enum values are ready for the dashboard adapter to review.
+- **Member 3:** review the Step 5 proposal: poll `get_agent_events(run_id)` for one completed run, and read `run_id` plus `recovery_result` from `run_triage`. The event fields and enum values are ready for the dashboard adapter; client integration is pending.
 - **Team:** confirm whether whole-load `SHED_LOAD` plus `CLOSE_SWITCH` covers the three scenarios. Any new action kind needs a matching deterministic validator and application path.
 
 Do not copy these objects into module-specific dictionaries or infer successful recovery from a typed LLM response. This branch supplies contracts only; scenario metrics and provider behavior remain unverified.
