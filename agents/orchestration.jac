@@ -6,6 +6,7 @@ import from agents.auditor { audit_incident, factual_incident_summary }
 import from agents.events { record_agent_run }
 import from agents.monitor { MonitorFacts, inspect_grid }
 import from agents.planner { propose_plan, propose_backup_plan, REQUEST_TIMEOUT_SECONDS }
+import from grid.fallback { generate_fallback_plan }
 import from jaclang.byllm.lib { ByLLMError }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, apply_approved_plan }
@@ -50,6 +51,8 @@ obj TriageResult {
     has attempt_modes: list[ExecutionMode] = [];
     has backup_after_attempt: int | None = None;
     has backup_reason: str | None = None;
+    has deterministic_after_attempt: int | None = None;
+    has deterministic_reason: str | None = None;
 }
 
 def _result(fault_id: str, status: TriageStatus, before_state: GraphState,
@@ -254,19 +257,24 @@ def _run_triage_with_planner(
 }
 
 
-def _combine_provider_runs(primary: TriageResult, backup: TriageResult) -> TriageResult {
+def _combine_provider_runs(
+    primary: TriageResult, backup: TriageResult,
+    deterministic: TriageResult | None = None
+) -> TriageResult {
+    final_run = deterministic if deterministic is not None else backup;
     combined = _result(
-        primary.fault_id, backup.status, primary.before_state,
-        primary.proposal_count + backup.proposal_count,
-        primary.rejection_reasons + backup.rejection_reasons,
-        backup.last_plan if backup.last_plan is not None else primary.last_plan,
-        backup.last_validation if backup.last_validation is not None else primary.last_validation,
-        backup.failure_reason, backup.after_state,
-        primary.attempts + backup.attempts
+        primary.fault_id, final_run.status, primary.before_state,
+        primary.proposal_count + backup.proposal_count + (deterministic.proposal_count if deterministic is not None else 0),
+        primary.rejection_reasons + backup.rejection_reasons + (deterministic.rejection_reasons if deterministic is not None else []),
+        final_run.last_plan if final_run.last_plan is not None else (backup.last_plan if backup.last_plan is not None else primary.last_plan),
+        final_run.last_validation if final_run.last_validation is not None else (backup.last_validation if backup.last_validation is not None else primary.last_validation),
+        final_run.failure_reason, final_run.after_state,
+        primary.attempts + backup.attempts + (deterministic.attempts if deterministic is not None else [])
     );
     combined.attempt_modes = (
         [ExecutionMode.PRIMARY_AI for _ in primary.attempts] +
-        [ExecutionMode.BACKUP_AI for _ in backup.attempts]
+        [ExecutionMode.BACKUP_AI for _ in backup.attempts] +
+        ([ExecutionMode.DETERMINISTIC for _ in deterministic.attempts] if deterministic is not None else [])
     );
     combined.backup_after_attempt = len(primary.attempts);
     combined.backup_reason = (
@@ -274,7 +282,17 @@ def _combine_provider_runs(primary: TriageResult, backup: TriageResult) -> Triag
         if primary.status == TriageStatus.PROVIDER_FAILED
         else "Primary proposals were rejected or exhausted"
     );
+    if deterministic is not None {
+        combined.deterministic_after_attempt = len(primary.attempts) + len(backup.attempts);
+        combined.deterministic_reason = "Primary and backup AI planning failed or exhausted their proposals";
+    }
     return combined;
+}
+
+def _deterministic_planner(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
+    plan = generate_fallback_plan(facts.graph_state);
+    if plan is None { raise ValueError("No feasible deterministic recovery plan"); }
+    return plan;
 }
 
 
@@ -399,6 +417,13 @@ def _finalize_triage(
                 triage.backup_reason or "Primary planning did not apply a plan"
             );
         }
+        if triage.deterministic_after_attempt == index {
+            _append_event(
+                events, run_id, AgentActor.SYSTEM, AgentEventKind.FALLBACK,
+                AgentEventOutcome.INFO, "Switched to deterministic fallback",
+                triage.deterministic_reason or "AI provider options did not apply a plan"
+            );
+        }
         attempt = triage.attempts[index];
         attempt_mode = (
             triage.attempt_modes[index]
@@ -448,6 +473,13 @@ def _finalize_triage(
             events, run_id, AgentActor.SYSTEM, AgentEventKind.FALLBACK,
             AgentEventOutcome.INFO, "Switched to independent Groq backup",
             triage.backup_reason or "Primary planning did not apply a plan"
+        );
+    }
+    if triage.deterministic_after_attempt == len(triage.attempts) {
+        _append_event(
+            events, run_id, AgentActor.SYSTEM, AgentEventKind.FALLBACK,
+            AgentEventOutcome.INFO, "Tried deterministic fallback",
+            triage.deterministic_reason or triage.failure_reason or "No feasible deterministic plan was available"
         );
     }
     if triage.status == TriageStatus.APPLIED {
@@ -541,7 +573,33 @@ def _run_triage_with_providers(
         return _finalize_triage(primary, run_id, started, ExecutionMode.NONE);
     }
     combined = _combine_provider_runs(primary, backup);
-    return _finalize_triage(combined, run_id, started, ExecutionMode.BACKUP_AI);
+    if backup.status not in [TriageStatus.PROVIDER_FAILED, TriageStatus.EXHAUSTED] {
+        return _finalize_triage(combined, run_id, started, ExecutionMode.BACKUP_AI);
+    }
+    if not _same_snapshot(backup.before_state) {
+        combined.status = TriageStatus.STALE;
+        combined.after_state = get_grid_state();
+        combined.failure_reason = "Grid changed before deterministic fallback planning began";
+        return _finalize_triage(combined, run_id, started, ExecutionMode.NONE);
+    }
+    deterministic = _run_triage_with_planner(
+        fault_id, _deterministic_planner, None, backup.before_state
+    );
+    if deterministic.status == TriageStatus.STALE and deterministic.proposal_count == 0 {
+        combined.status = TriageStatus.STALE;
+        combined.after_state = deterministic.after_state;
+        combined.failure_reason = "Grid changed before deterministic fallback planning began";
+        return _finalize_triage(combined, run_id, started, ExecutionMode.NONE);
+    }
+    combined = _combine_provider_runs(primary, backup, deterministic);
+    if deterministic.proposal_count == 0 {
+        combined.status = TriageStatus.EXHAUSTED;
+        combined.failure_reason = "Primary and backup AI failed; no feasible deterministic plan was available";
+    }
+    return _finalize_triage(
+        combined, run_id, started,
+        ExecutionMode.DETERMINISTIC if deterministic.status == TriageStatus.APPLIED else ExecutionMode.NONE
+    );
 }
 
 
