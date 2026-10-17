@@ -2,7 +2,7 @@
 
 import from agents.monitor { MonitorFacts }
 import from agents.orchestration { _run_triage_with_planner, TriageStatus }
-import from grid.fallback { generate_fallback_plan }
+import from grid.fallback { deterministic_fallback_plan, generate_fallback_plan }
 import from grid.fixture { FAULT_SOURCE_A, FAULT_LINE_A_H, FAULT_INSUFFICIENT_BACKUP, fixture_lines }
 import from grid.graph { Grid }
 import from grid.simulation { get_grid_state, inject_fault, reset_simulation, apply_approved_plan }
@@ -19,6 +19,7 @@ def _fixed_fallback(facts: MonitorFacts, feedback: str) -> RecoveryPlan {
 
 test "healthy state has no fallback proposal" {
     healthy = reset_simulation();
+    assert deterministic_fallback_plan(healthy) is None;
     assert generate_fallback_plan(healthy) is None;
     assert get_grid_state().generation_id == healthy.generation_id;
     assert get_grid_state().revision == 0;
@@ -28,7 +29,7 @@ test "healthy state has no fallback proposal" {
 test "line fault fallback reroutes through healthy tie and retains physical fault" {
     reset_simulation();
     before = inject_fault(FAULT_LINE_A_H);
-    plan = generate_fallback_plan(before);
+    plan = deterministic_fallback_plan(before);
     assert plan is not None;
     assert plan.fault_id == FAULT_LINE_A_H;
     assert plan.grid_generation_id == before.generation_id;
