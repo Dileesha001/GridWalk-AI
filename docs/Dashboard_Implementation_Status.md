@@ -6,7 +6,7 @@ live simulation or recovery is connected.
 | Step | Task | Status and evidence |
 |---|---|---|
 | 1 | Requirements, ownership, and invariants | Done. Server authority and deterministic approval remain intact. |
-| 2 | Jac environment and application setup | Done, migrated to required Jac 0.34.13 on WSL 2. Native binary pinned and checksum verified; 22 client/entry checks, 15 client runtime tests, 11 simulation tests, web build, and sealed app build pass. |
+| 2 | Jac environment and application setup | Done, migrated to required Jac 0.34.13 on WSL 2. Native binary pinned and checksum verified; 33 static checks, 15 client runtime tests, 28 simulation tests, web build, and sealed app build pass. |
 | 3 | Preview foundation and payload validation | Done for preview. Nine runtime tests pass, including the response-envelope fix. Canonical live decoding is part of Step 6. |
 | 4 | Dashboard shell | Done for the healthy Figma console. Presentation is authored in Jac; responsive browser checks pass. |
 | 5 | Read-only topology and inspection | Done. Four fixed snapshots, twelve buses, component/line inspection, retained physical faults, and six topology runtime tests. |

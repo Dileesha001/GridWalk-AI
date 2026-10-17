@@ -14,6 +14,6 @@ jac check main.jac client -n
 jac run scripts/check_foundation.py foundation
 jac run scripts/check_foundation.py topology
 # These historical *_checks filenames are not found by directory discovery.
-jac test tests/fixture_checks.jac tests/fault_checks.jac tests/allocation_checks.jac
+jac test tests/*_checks.jac
 jac build --client web main.jac
 jac build main.jac

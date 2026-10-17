@@ -1,0 +1,9 @@
+# Member 1 approved application handoff
+
+`grid/simulation.jac` exposes `apply_approved_plan(plan: RecoveryPlan) -> GraphState` using the canonical `shared/contracts.jac` types. Callers provide the proposed plan, not a previous `ValidationResult`. The function reruns `validate_plan` against the current graph, so the active fault, generation ID, and revision must still match. An invalid or stale plan raises `ValueError` with factual validator feedback and makes no state change.
+
+On acceptance, the application stores the validated candidate's source dispatch, whole-load service, deliberate sheds, and signed line transfers in persistent Jac graph entities. It closes approved switches, retains physical faults, and increments the grid revision once. `get_grid_state()` then projects those committed readings, load status, line status, and `GridMetrics`. A repeated call with the old plan is stale. Reset rebuilds a healthy generation and clears committed readings. A later plan at the current revision retains loads already deliberately shed.
+
+The fixture uses simplified lossless kW allocation. The accepted plan for `FAULT-LINE-A-H` with `CLOSE_SWITCH(SW-TIE-B-H)` restores both critical loads behind the fault while `LINE-A-H` remains physically faulted. A valid `FAULT-SOURCE-A` plan with the `SW-TIE-B-A` closure and `SHED_LOAD(LOAD-OFFICE)` records 25 kW of deliberate shedding. These are fixed Jac test proposals, not model output.
+
+Verification with Jac 0.16.7: `jac check grid/` and `jac check tests/` passed. `jac test -d tests/ -v` passed all 28 tests, including 5 new application checks. The next integration step is for Member 2 to call the approved application operation after its Planner obtains an accepted `ValidationResult`; Member 3 can then render the returned authoritative `GraphState` and measured metrics. Neither integration is part of Task 5.

@@ -1,6 +1,7 @@
 """Healthy twelve-bus fixture; fault scenarios are added in Task 2."""
 
 import from grid.graph { Grid, GridBus, Source, Load, PowerLine }
+import from uuid { uuid4 }
 
 """Stable IDs for the three named Task 2 fault scenarios."""
 glob FAULT_SOURCE_A: str = "FAULT-SOURCE-A";
@@ -39,7 +40,7 @@ def add_line(from_bus: GridBus, to_bus: GridBus, line_id: str, switch_id: str,
 }
 
 def build_healthy_fixture() -> Grid {
-    grid = Grid(grid_id="GRID-01");
+    grid = Grid(grid_id="GRID-01", generation_id=str(uuid4()));
     root ++> grid;
 
     src_a = Source(bus_id="SRC-A", label="North substation", capacity_kw=120.0);

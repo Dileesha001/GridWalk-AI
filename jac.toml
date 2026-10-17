@@ -6,6 +6,9 @@ entry-point = "main.jac"
 kind = "web-app"
 jac-version = "==0.34.13"
 
+[dependencies]
+python-dotenv = ">=1.0,<2"
+
 [dependencies.npm]
 react = "^18.2.0"
 react-dom = "^18.2.0"
@@ -35,3 +38,6 @@ title = "GridWalk AI · Recovery console"
 description = "Fictional microgrid recovery console with inspectable fixed display snapshots."
 theme_color = "#102b30"
 icon = "data:,"
+
+[byllm.model]
+default_model = "gemini/gemini-3.8-flash"

@@ -22,6 +22,12 @@ is the mechanical lambda syntax update in the allocation load-order sort;
 priority and stable-ID ordering are unchanged. The removed `global` directive
 now follows Jac's nearest-enclosing-binding behavior.
 
+The merged planner uses native `[byllm.model]` configuration. Its model choice
+is preserved; the obsolete standalone `byllm` package is removed because this
+Jac release supplies that capability directly. `jac install` resolves the
+built-in capability's provider dependencies. No live model call is needed for
+these build and deterministic regression checks.
+
 Official references: [0.34.13 release](https://github.com/jaseci-labs/jac/releases/tag/v0.34.13)
 and [versioned breaking changes](https://github.com/jaseci-labs/jac/blob/v0.34.13/docs/docs/community/breaking-changes.md).
 The native binary bundles its runtime; do not install this release with the old
@@ -78,12 +84,13 @@ checkout can instead be built directly without this Windows-to-Linux sync step.
 
 Verified with the installed native 0.34.13 compiler:
 
-- 22 client/entry static checks pass.
+- 33 client, entry, shared, simulation, and agent static checks pass after merging
+  the newer dashboard changes.
 - Nine foundation and six topology runtime tests pass.
-- All eleven existing fixture/fault/allocation tests pass.
+- All 28 fixture, fault, allocation, validation, and application tests pass.
 - Web client build succeeds.
 - The normal whole-program build gate succeeds and seals all thirteen server
-  modules into `dist/gridwalk-ai.jab` (2,326,842 bytes).
+  modules into `dist/gridwalk-ai.jab`.
 - A copy of this WSL-built artifact is available locally at
   `E:\GridWalk-AI\.jac\wsl-artifacts\gridwalk-ai.jab`.
 - The sealed artifact serves successfully from WSL on port 8011. Chrome checks
@@ -104,14 +111,15 @@ version, then runs:
 jac check main.jac client -n
 jac run scripts/check_foundation.py foundation
 jac run scripts/check_foundation.py topology
-jac test tests/fixture_checks.jac tests/fault_checks.jac tests/allocation_checks.jac
+jac test tests/*_checks.jac
 jac build --client web main.jac
 jac build main.jac
 ```
 
 The native Jac runtime runs the Python test helper and supplies its managed Bun.
-Explicit simulation filenames are necessary: directory discovery does not collect
-the existing `*_checks.jac` names. A run collecting zero tests is not a success.
+The shell expands the simulation filename pattern explicitly: directory discovery
+does not collect the existing `*_checks.jac` names. This also includes the merged
+validation and application suites. A run collecting zero tests is not a success.
 `-n` hides warnings; it does not skip errors or type checking. Do not use
 `--no_typecheck` to make a failing build pass.
 
