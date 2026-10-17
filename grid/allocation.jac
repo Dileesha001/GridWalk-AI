@@ -91,7 +91,7 @@ def preview_allocation(grid: Grid, switch_overrides: dict[str, bool],
     unserved_ids: list[str] = [];
     tolerance_kw = 0.000001;
     ordered_loads = loads.copy();
-    ordered_loads.sort(key=lambda load: Load : (load.tier, load.bus_id));
+    ordered_loads.sort(key=lambda (load: Load) { (load.tier, load.bus_id); });
 
     # Serve Tier 1 first, then Tier 2, then Tier 3; IDs break ties.
     for load in ordered_loads {
