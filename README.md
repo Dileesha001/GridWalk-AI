@@ -61,7 +61,7 @@ sequenceDiagram
     UI->>API: run_triage(fault_id, generation, revision)
     API->>Monitor: Inspect the current fault
     Monitor-->>API: Graph facts and affected demand
-    loop Gemini, then Groq; until committed or exhausted
+    loop AI proposals until committed or exhausted
         API->>Planner: Request a typed proposal
         Planner-->>API: Proposed actions
         API->>Guard: Validate against current grid
