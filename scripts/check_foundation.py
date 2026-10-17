@@ -19,9 +19,14 @@ def main():
         raise SystemExit("Run jac install first to install the project-local Bun runtime.")
 
     suite = sys.argv[1] if len(sys.argv) > 1 else "foundation"
-    if suite not in ("foundation", "topology"):
-        raise SystemExit("Usage: check_foundation.py [foundation|topology]")
-    modules = ("models", "preview", "decode") if suite == "foundation" else ("models", "topology_examples", "topology_layout")
+    suites = {
+        "foundation": ("models", "preview", "decode"),
+        "topology": ("models", "topology_examples", "topology_layout"),
+        "live_grid": ("models", "decode", "topology_examples", "grid_decode", "network_geometry"),
+    }
+    if suite not in suites:
+        raise SystemExit("Usage: check_foundation.py [foundation|topology|live_grid]")
+    modules = suites[suite]
     for name in modules:
         source, _, _, _ = compile_cl_module(str(root / "client" / f"{name}.cl.jac"))
         (build / f"{name}.js").write_text(source, encoding="utf-8")

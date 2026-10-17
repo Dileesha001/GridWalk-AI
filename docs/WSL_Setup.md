@@ -17,9 +17,10 @@ are historical evidence and do not replace verification with this version.
 
 The project now uses `kind = "web-app"`, `jac-version = "==0.34.13"`, and
 `[client]` / `[client.app_meta_data]` configuration. Typed lambda parameters are
-parenthesized; expression lambdas use braces. The only simulation source change
-is the mechanical lambda syntax update in the allocation load-order sort;
-priority and stable-ID ordering are unchanged. The removed `global` directive
+parenthesized; expression lambdas use braces. The migration updated lambda syntax
+in the allocation load-order sort; priority and stable-ID ordering are unchanged.
+Step 6 also corrects reset branch replacement order so a fresh generation persists
+across HTTP requests. The removed `global` directive
 now follows Jac's nearest-enclosing-binding behavior.
 
 The merged planner uses native `[byllm.model]` configuration. Its model choice
@@ -84,9 +85,8 @@ checkout can instead be built directly without this Windows-to-Linux sync step.
 
 Verified with the installed native 0.34.13 compiler:
 
-- 33 client, entry, shared, simulation, and agent static checks pass after merging
-  the newer dashboard changes.
-- Nine foundation and six topology runtime tests pass.
+- 28 entry/client checks pass; the whole-program build gate passes 44 checks.
+- Nine foundation, six topology, and six live-decoder runtime tests pass.
 - All 28 fixture, fault, allocation, validation, and application tests pass.
 - Web client build succeeds.
 - The normal whole-program build gate succeeds and seals all thirteen server
@@ -111,6 +111,7 @@ version, then runs:
 jac check main.jac client -n
 jac run scripts/check_foundation.py foundation
 jac run scripts/check_foundation.py topology
+jac run scripts/check_foundation.py live_grid
 jac test tests/*_checks.jac
 jac build --client web main.jac
 jac build main.jac
@@ -132,7 +133,13 @@ WSL-hosted app from PowerShell:
 
 ```powershell
 .venv/Scripts/python.exe scripts/verify_console.py http://127.0.0.1:8011
+.venv/Scripts/python.exe scripts/verify_grid_api.py http://127.0.0.1:8011
+.venv/Scripts/python.exe scripts/verify_live_console.py http://127.0.0.1:8011
 ```
 
 That Python process only drives the Windows browser; the application is compiled
 and served by Linux Jac 0.34.13. No Windows Jac build is involved.
+
+Step 6 adds verified live fault/reset workflows and canonical server metrics.
+The API and live browser checks mutate and reset the local guest simulation;
+run them only against a test server. See [live integration evidence](Live_Grid_Integration.md).

@@ -13,6 +13,7 @@ jac --version
 jac check main.jac client -n
 jac run scripts/check_foundation.py foundation
 jac run scripts/check_foundation.py topology
+jac run scripts/check_foundation.py live_grid
 # These historical *_checks filenames are not found by directory discovery.
 jac test tests/*_checks.jac
 jac build --client web main.jac
