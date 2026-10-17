@@ -265,7 +265,7 @@ def:pub validate_plan(plan: RecoveryPlan) -> ValidationResult {
     switch_ids = {line.switch_id for line in fixture_lines(grid)};
     load_ids = {load.bus_id for load in fixture_loads(grid)};
     switches: dict[str, bool] = {};
-    shed_ids: set[str] = set();
+    shed_ids: set[str] = {load.bus_id for load in fixture_loads(grid) if load.deliberately_shed};
     for action in plan.actions {
         if not isinstance(action, RecoveryAction) {
             reasons.append("Plan contains an invalid recovery action");
@@ -291,7 +291,7 @@ def:pub validate_plan(plan: RecoveryPlan) -> ValidationResult {
                     reasons.append(f"Unknown load ID: {action.target_id}");
                 }
             } elif action.target_id in shed_ids {
-                reasons.append(f"Duplicate SHED_LOAD action for {action.target_id}");
+                reasons.append(f"Duplicate or already applied SHED_LOAD action for {action.target_id}");
             } else {
                 shed_ids.add(action.target_id);
             }

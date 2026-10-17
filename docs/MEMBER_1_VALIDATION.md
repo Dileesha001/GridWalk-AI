@@ -4,7 +4,7 @@
 
 `SHED_LOAD` takes a load bus ID and `CLOSE_SWITCH` takes a switch ID. Unsupported kinds, wrong or unknown target IDs, and duplicate actions receive specific reasons. Accepted results contain a copied `CandidateAllocationView` and `candidate_metrics` computed from that candidate. Rejected results contain no candidate or candidate metrics. The result reports the generation and revision checked. Validation never changes the grid, switches, physical faults, or revision.
 
-The typed plan carries actions only; it does not carry a claimed numeric allocation. `validate_plan` therefore uses deterministic `preview_allocation`. The lower-level `validate_candidate` remains available to check a separately claimed complete allocation and to report its numeric violations. Task 5 will implement `apply_approved_plan` with a fresh validation and version check before committing any change.
+The typed plan carries actions only; it does not carry a claimed numeric allocation. `validate_plan` therefore uses deterministic `preview_allocation`. The lower-level `validate_candidate` remains available to check a separately claimed complete allocation and to report its numeric violations. Task 5 implements `apply_approved_plan` with fresh validation before committing any change; see [application handoff](MEMBER_1_APPLICATION.md).
 
 `grid/validation.jac` provides `validate_candidate(grid, switch_overrides, shed_load_ids, claimed_allocation=None) -> CandidateValidation`. It is deterministic Jac code and does not mutate the graph. `CandidateValidation` contains `accepted`, specific `reasons`, the evaluated `allocation` when references are valid, and the `grid_revision` used for evaluation.
 
