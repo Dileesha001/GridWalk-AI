@@ -1,146 +1,38 @@
-# Jac 0.34.13 on WSL
+# Local development with WSL
 
-This is the required build environment. The earlier Windows Jac 0.16.7 checks
-are historical evidence and do not replace verification with this version.
+GridWalk AI uses the native Jac 0.34.13 release on Ubuntu under WSL 2. Keep the running project on the Linux filesystem: the simulator stores its graph in SQLite, which can fail when served from a Windows-mounted directory.
 
-## Environment installed and migration
+## Prepare a Linux working copy
 
-- Ubuntu 26.04.1 LTS on WSL 2, x86_64.
-- Native `jac 0.34.13 (Linux x86_64)` installed at
-  `/opt/gridwalk/jac-0.34.13/jac`, linked from `/usr/local/bin/jac`.
-- Release binary SHA-256:
-  `cb59ebef48a238762e024a05d192d0743312c9f7818974c8eaeb326acbc4848e`.
-- Windows editable sources: `E:\GridWalk-AI` (`/mnt/e/GridWalk-AI` in WSL).
-- Linux build copy on this machine: `/root/GridWalk-AI`.
-- Linux dependencies and generated output stay in that copy's `.jac/` and
-  `dist/`. The existing Windows `.venv/` and `.jac/` are not reused or deleted.
-
-The project now uses `kind = "web-app"`, `jac-version = "==0.34.13"`, and
-`[client]` / `[client.app_meta_data]` configuration. Typed lambda parameters are
-parenthesized; expression lambdas use braces. The migration updated lambda syntax
-in the allocation load-order sort; priority and stable-ID ordering are unchanged.
-Step 6 also corrects reset branch replacement order so a fresh generation persists
-across HTTP requests. The removed `global` directive
-now follows Jac's nearest-enclosing-binding behavior.
-
-At migration time the planner used native `[byllm.model]` configuration. Step 6
-later moved the primary and backup model settings into `agents/planner.jac` for
-explicit provider attribution. The obsolete standalone `byllm` package was
-removed because this Jac release supplies that capability directly. `jac install`
-resolves the built-in capability's provider dependencies. No live model
-call was part of the original migration checks.
-
-Official references: [0.34.13 release](https://github.com/jaseci-labs/jac/releases/tag/v0.34.13)
-and [versioned breaking changes](https://github.com/jaseci-labs/jac/blob/v0.34.13/docs/docs/community/breaking-changes.md).
-The native binary bundles its runtime; do not install this release with the old
-`pip install jaclang` / `jac-client` instructions.
-
-## Reproduce the setup
-
-For a machine without an Ubuntu distribution, run in PowerShell:
-
-```powershell
-wsl.exe --install -d Ubuntu --no-launch
-```
-
-Open Ubuntu's Bash from PowerShell:
-
-```powershell
-wsl.exe -d Ubuntu --exec bash
-```
-
-Then run inside WSL:
+If the repository is already checked out under your WSL home directory, work from that checkout. If you edit a Windows checkout, run this command from its root in WSL to create a Linux build copy:
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
-bash /mnt/e/GridWalk-AI/scripts/install_jac_wsl.sh
-bash /mnt/e/GridWalk-AI/scripts/sync_wsl.sh "$HOME/GridWalk-AI"
+bash scripts/sync_wsl.sh "$HOME/GridWalk-AI"
 cd "$HOME/GridWalk-AI"
-jac --version
+```
+
+The sync script copies source files without Git metadata, generated files, or local secrets. Edit the original checkout and sync again after source changes. It preserves files already in the Linux copy, so remove an obsolete copied file there if you need an exact mirror.
+
+## Install and run
+
+From the Linux checkout or build copy:
+
+```bash
+bash scripts/install_jac_wsl.sh
+export PATH="$HOME/.local/bin:$PATH"
+jac --version                 # 0.34.13
 jac install
-bash scripts/verify_wsl.sh
 jac start main.jac --port 8011
 ```
 
-Open `http://localhost:8011` in the Windows browser. Add `--dev` to the start
-command when hot reload is needed.
+Open `http://localhost:8011` in a Windows browser. Stop the server with Ctrl+C. Run only one server against a given local `.jac/data` directory at a time.
 
-The installer pins the release URL, verifies its published checksum, and accepts
-only WSL x86_64/aarch64. It leaves an already-correct version alone. Shell helpers
-are bootstrap/verification tooling; application implementation remains Jac.
+To use live providers, set `GOOGLE_API_KEY` and `GROQ_API_KEY` in a local `.env` beside `jac.toml`; [.env.example](../.env.example) lists the variables. The Windows-to-WSL sync intentionally excludes `.env`, so configure it in the Linux copy separately. Keep keys out of Git. Recovery can use a deterministic fallback when provider planning does not apply a plan and a feasible candidate remains.
 
-## Editing and syncing
-
-Edit the original repository. Before another WSL build, run the sync command
-again, then work from the Linux copy. The script preserves Linux dependencies and
-does not delete files. It excludes Windows caches, Git internals, local secrets,
-generated artifacts, and the three unfinished local draft components/adapter.
-It refuses to overwrite a Git checkout or a different named project. If a source
-file is deleted later, remove only that known file from the Linux copy as well;
-the sync deliberately does not mirror deletions.
-
-No source edits should be made exclusively in the build copy. A clean Linux Git
-checkout can instead be built directly without this Windows-to-Linux sync step.
-
-## Verification commands
-
-Verified with the installed native 0.34.13 compiler:
-
-- 28 entry/client checks pass; the whole-program build gate passes 44 checks.
-- Nine foundation, six topology, and six live-decoder runtime tests pass.
-- All 28 fixture, fault, allocation, validation, and application tests pass.
-- Web client build succeeds.
-- The normal whole-program build gate succeeds and seals all thirteen server
-  modules into `dist/gridwalk-ai.jab`.
-- A copy of this WSL-built artifact is available locally at
-  `E:\GridWalk-AI\.jac\wsl-artifacts\gridwalk-ai.jab`.
-- The sealed artifact serves successfully from WSL on port 8011. Chrome checks
-  pass at 1440, 1024, 768, and 375 pixel widths, with sixteen loaded SVGs, four
-  loaded font faces, correct bus selection, keyboard snapshot changes, retained
-  physical fault inspection, reduced motion, and the skip link. The browser
-  console has no application errors or warnings.
-
-The compiler reports an optimization fallback for `grid/metrics.jac`: it runs
-that module in the server codespace instead of lowering it to native machine
-code. This is not a failed check; the simulation tests pass. No allocator or
-metric behavior was changed to suppress that compiler note.
-
-`bash scripts/verify_wsl.sh` refuses a non-WSL environment or a different Jac
-version, then runs:
+## Verify a checkout
 
 ```bash
-jac check main.jac client -n
-jac run scripts/check_foundation.py foundation
-jac run scripts/check_foundation.py topology
-jac run scripts/check_foundation.py live_grid
-jac test tests/*_checks.jac
-jac build --client web main.jac
-jac build main.jac
+bash scripts/verify_wsl.sh
 ```
 
-The native Jac runtime runs the Python test helper and supplies its managed Bun.
-The shell expands the simulation filename pattern explicitly: directory discovery
-does not collect the existing `*_checks.jac` names. This also includes the merged
-validation and application suites. A run collecting zero tests is not a success.
-`-n` hides warnings; it does not skip errors or type checking. Do not use
-`--no_typecheck` to make a failing build pass.
-
-The web shell is emitted under `.jac/client/dist/`. The default `jac build`
-also produces a sealed `.jab` application under `dist/`. This is a local build,
-not a deployment or live recovery integration result.
-
-On this Windows machine, the existing Chrome verification helper can inspect the
-WSL-hosted app from PowerShell:
-
-```powershell
-.venv/Scripts/python.exe scripts/verify_console.py http://127.0.0.1:8011
-.venv/Scripts/python.exe scripts/verify_grid_api.py http://127.0.0.1:8011
-.venv/Scripts/python.exe scripts/verify_live_console.py http://127.0.0.1:8011
-```
-
-That Python process only drives the Windows browser; the application is compiled
-and served by Linux Jac 0.34.13. No Windows Jac build is involved.
-
-Step 6 adds verified live fault/reset workflows and canonical server metrics.
-The API and live browser checks mutate and reset the local guest simulation;
-run them only against a test server. See [live integration evidence](Live_Grid_Integration.md).
+The script checks Jac source, runs the repository's runtime and scenario checks, and builds the web client and sealed app. It requires Jac 0.34.13 and does not call live model providers. The `Dockerfile` also installs the pinned native Jac release for container deployments.
