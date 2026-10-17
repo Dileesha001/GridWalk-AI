@@ -5,6 +5,7 @@ node Grid {
     has generation_id: str;
     has revision: int = 0;
     has active_fault_id: str = "";
+    has allocation_committed: bool = False;
 }
 
 node GridBus {
@@ -15,11 +16,14 @@ node GridBus {
 node Source(GridBus) {
     has capacity_kw: float;
     has is_backup: bool = False;
+    has dispatched_kw: float = 0.0;
 }
 
 node Load(GridBus) {
     has demand_kw: float;
     has tier: int;
+    has served_kw: float = 0.0;
+    has deliberately_shed: bool = False;
 }
 
 edge PowerLine: GridBus --> GridBus {
@@ -30,6 +34,7 @@ edge PowerLine: GridBus --> GridBus {
     has capacity_kw: float;
     has switch_closed: bool = True;
     has physically_faulted: bool = False;
+    has transfer_kw: float = 0.0;
 }
 
 def conducts(line: PowerLine) -> bool {

@@ -24,7 +24,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
 | 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Implemented; ready for review |
-| 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
+| 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | Implemented; ready for review |
 | 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
 
 ## 1. Graph contract and healthy fixture
@@ -73,6 +73,8 @@ Implementation evidence: `grid/validation.jac` now exposes `validate_plan(Recove
 - Commit switch and service changes atomically from the validated candidate, then recompute allocation, status, and metrics. A successful reroute must retain the physical fault.
 - Compute before/after metrics in `grid/metrics.jac`: critical demand preserved, deliberate shed kW, total unmet kW, available capacity, dispatch, and active faults/violations.
 - **Done when:** rejected or stale candidates do not mutate state; repeated application cannot duplicate changes; metrics match the committed graph.
+
+Implementation evidence: `grid/simulation.jac` now exposes `apply_approved_plan(RecoveryPlan) -> GraphState`. It calls the current validator, commits only an accepted candidate's switch, dispatch, service, shed, and line transfer values, increments the revision once, and projects authoritative metrics from those committed values. `grid/graph.jac` carries the committed readings and `grid/validation.jac` preserves earlier deliberate sheds during a later plan preview. `tests/application_checks.jac` covers accepted rerouting, physical-fault retention, rejected/infeasible plans, duplicate application, reset generation, deliberate shedding, projection/metric agreement, and reset after recovery. See [application handoff](MEMBER_1_APPLICATION.md). `jac check grid/` and `jac check tests/` passed; `jac test -d tests/ -v` passed 28 tests.
 
 ## 6. Scenario verification and integration
 
