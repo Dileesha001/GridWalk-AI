@@ -23,7 +23,7 @@ The scaffold files are placeholders, not implemented behavior. Add Jac tests alo
 | 1. Graph contract and healthy fixture | `member1/01-graph-contract-fixture` | — | Implemented; contract review pending |
 | 2. Faults, state projection, and reset | `member1/02-faults-state-reset` | 1 | Implemented; contract review pending |
 | 3. Deterministic allocation and routing | `member1/03-allocation-routing` | 2 | Implemented; review pending |
-| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | To do |
+| 4. Candidate validation and feedback | `member1/04-plan-validation` | 3; Member 2 plan contract | Ready to implement after `member2/01b-validation-handoff` merges |
 | 5. Approved application and metrics | `member1/05-apply-metrics` | 4 | To do |
 | 6. Scenario verification and integration | `member1/06-scenarios-integration` | 5; Member 2 and 3 interfaces | To do |
 
@@ -59,6 +59,7 @@ Implementation evidence: `grid/allocation.jac` previews whole-load allocations w
 
 ## 4. Candidate validation and feedback
 
+- The [Member 2 handoff](MEMBER_2_CONTRACTS.md#member-1-task-45-handoff-ready-to-implement) specifies action target IDs, `validate_plan` and application signatures, allocation projection, and the generation/revision stale-plan rule. Member 2's other tasks do not block this validator.
 - Import Member 2's canonical typed recovery-plan/action contract from `shared/contracts.jac` rather than creating a competing schema in `grid/validation.jac`.
 - Implement non-mutating validation in `grid/validation.jac` for the entire candidate state: action types and IDs, target kinds, numbers, switch/fault logic, conducting paths, source and line ratings, conservation, and priority policy.
 - Reject deliberate Tier 1 shedding and return specific, factual reasons that support a Planner revision.

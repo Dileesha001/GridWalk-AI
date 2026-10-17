@@ -11,7 +11,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 | Order | Branch | Deliverable | Dependency | Status |
 | --- | --- | --- | --- | --- |
 | 0 | `member2/00-task-list` | This task list and handoff sequence | Current `dev` | Ready for PR |
-| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Agree fields with Members 1 and 3 | Implemented; contract review pending |
+| 1 | `member2/01-recovery-contracts` | Shared typed actions, plans, feedback, events, and results | Member 1 handoff; Member 3 event transport later | Member 1 validation/application handoff ready on `member2/01b-validation-handoff` |
 | 2 | `member2/02-telemetry-monitor` | Graph-traversing Monitor with factual fault observations | `GraphState` and fixture IDs | To do |
 | 3 | `member2/03-typed-planner` | Typed `by llm()` proposal path and primary Gemini smoke test | Tasks 1–2; provider access | To do |
 | 4 | `member2/04-validation-revision` | Validation, bounded revision, current-state application orchestration | Member 1 validation/application; Tasks 1–3 | To do |
@@ -69,7 +69,7 @@ Create each implementation branch from the latest merged `origin/dev`, in the or
 
 ## Immediate handoffs
 
-1. **Member 1:** confirm action names and target IDs, validator feedback fields, approved application signature, deterministic fallback candidate ownership, and revision-based stale-plan rule before Task 4.
+1. **Member 1:** Task 4 can proceed from the [validation/application handoff](MEMBER_2_CONTRACTS.md#member-1-task-45-handoff-ready-to-implement) once `member2/01b-validation-handoff` is merged. Action targets, validator output, application behavior, and reset-safe stale-plan fields are specified there. Deterministic fallback candidate ownership stays with Member 1 for later integration.
 2. **Member 3:** agree `run_triage` result envelope, event ordering/run IDs, polling or streaming, execution mode labels, and busy/reset behavior before Task 5.
 3. **Provider access:** select a Gemini Flash model only after typed output succeeds for the actual account; confirm whether a separate backup provider can be tested. Keep keys outside the repository.
 
