@@ -95,6 +95,10 @@ See [topology preview notes](Topology_Preview.md) for files and validation evide
 
 ## Next: Step 6
 
+The required environment has since changed to Jac 0.34.13 on WSL 2. The migration
+is documented in [WSL setup and verification](WSL_Setup.md); it supersedes the
+Windows installation commands in the historical milestone entries above.
+
 Update: the healthy Figma console refresh and a re-audit of Steps 1–5 are now
 implemented locally. The active UI uses Jac style dictionaries and bundled local
 design assets. Current task statuses and verification evidence are maintained in

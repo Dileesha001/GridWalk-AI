@@ -23,19 +23,23 @@ Agree the graph projection, recovery plan/action schema, validation feedback, ev
 
 ## Local setup
 
-Use Ubuntu in WSL 2 and the native Jac 0.34.13 binary. From the repository root in PowerShell, enter WSL with `wsl`, then run:
+The required build environment is **Ubuntu on WSL 2 with native Jac 0.34.13**. See [WSL setup and verification](docs/WSL_Setup.md) for the pinned, checksum-verified installer and source sync. Jac itself comes from the native binary; the earlier Windows Python/pip setup is superseded.
+
+Inside WSL, from the Linux build copy:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/jaseci-labs/jaseci/main/scripts/install.sh | bash -s -- --version 0.34.13
-export PATH="$HOME/.local/bin:$PATH"
 jac --version                      # must report 0.34.13
-jac install                        # project dependencies; Jac itself comes from the binary
-jac check . -n
-jac start --dev main.jac --port 8001
+jac install                        # install project dependencies
+bash scripts/verify_wsl.sh
+jac start main.jac --port 8011
 ```
 
-Open `http://localhost:8001`. Development mode recompiles changed client modules and uses port 8002 for the API. Keep the real Gemini key in the ignored root `.env` as `GOOGLE_API_KEY=...`; never commit it. Installation requires network access and access to Bun's dependency cache. To build the client bundle under WSL, run `jac build --client web` after stopping the dev server. The older Windows Python/pip and browser commands in milestone notes document checks done before this migration and are not the current setup.
+Open `http://localhost:8011` in the Windows browser. Keep Linux dependencies separate from the old Windows `.venv/` and `.jac/`. After editing the Windows repository, sync its source into the Linux build copy before checking again. Installation requires network access and access to Bun's dependency cache.
 
-See [topology preview notes](docs/Topology_Preview.md) for the display states and limitations. Earlier browser and runtime checks were performed on Jac 0.16.7; they are not evidence of end-to-end recovery on 0.34.13.
+For hot reload, use `jac start --dev main.jac --port 8001`; open `http://localhost:8001`, with the API on port 8002. To build the web client separately, stop the dev server and run `jac build --client web`.
 
-See [progress and checks](docs/Member_3_Progress.md) for historical milestones, the [design review](docs/Design_Review.md) for console checks and limitations, and the [Jac 0.34.13 migration notes](docs/JAC_034_MIGRATION.md) for WSL compiler and client build results.
+For live Gemini calls, keep `GOOGLE_API_KEY` in the ignored `.env` at the Linux project root. Do not commit the key. The preview checks do not require a live model call.
+
+The verification script covers client syntax/types, foundation and topology regressions, simulation/validation/application regressions, the web shell, and the sealed app artifact. Current WSL results are recorded in the [setup guide](docs/WSL_Setup.md). Historical Windows checks remain in earlier milestone notes; neither preview checks nor a successful build establish end-to-end recovery or deployment.
+
+See [topology preview notes](docs/Topology_Preview.md) for display states and limitations, [progress and checks](docs/Member_3_Progress.md) for historical milestones, the [design review](docs/Design_Review.md) for console checks, and the [Jac 0.34.13 migration notes](docs/JAC_034_MIGRATION.md) for the upstream migration results.
