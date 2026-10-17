@@ -12,7 +12,11 @@ fault injection or planning. Generation, revision,
 run identity, complete event sequence, and metric checks reject mismatched evidence.
 Failed confirmation retains the last confirmed grid and requires refresh. Recovery
 uses a 120-second client timeout; timing out does not cancel server processing.
-Events are displayed together after completion, not streamed during execution.
+After primary and Groq backup proposals fail or exhaust, the server tries the
+deterministic fixture planner. Its candidate is revalidated and applied only via
+the same approved-plan path. Ordered fallback events identify the transition,
+and successful deterministic recovery is labeled `deterministic`. Events are
+displayed together after completion, not streamed during execution.
 
 Verification on 2026-10-17 with native Jac 0.34.13 on WSL:
 
@@ -41,9 +45,10 @@ application. It makes no live AI calls and labels applied results deterministic.
 Run the verification helper only against that fixture. Product startup remains
 `jac start main.jac --port 8011`.
 
-Browser automation was unavailable in this session. Fresh recovery browser checks,
-live-provider access, provider fallback, measured performance, and deployment are
-not established by these checks.
+Browser automation was unavailable in the earlier verification session. This
+change adds forced provider-failure coverage for deterministic fallback, but the
+current WSL restriction prevented rerunning that check. Fresh recovery browser
+checks, live-provider access, measured performance, and deployment remain pending.
 
 The expected-generation/revision guard is verified by the Jac checks and the HTTP
 stale-request scenario above.
