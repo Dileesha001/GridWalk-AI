@@ -49,6 +49,7 @@ obj GridMetrics {
 obj GraphState {
     has grid_id: str;
     has revision: int;
+    has active_fault_ids: list[str];
     has sources: list[SourceView];
     has loads: list[LoadView];
     has lines: list[LineView];

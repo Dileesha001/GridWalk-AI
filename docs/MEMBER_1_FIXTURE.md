@@ -51,6 +51,22 @@ The table gives one feasible healthy reference flow, not an allocation algorithm
 
 ## Shared graph projection
 
-`shared/contracts.jac` defines the canonical `GraphState` projection using `SourceView`, `LoadView`, `LineView`, and `GridMetrics`. Status strings and `conducting` are server-derived fields for the dashboard. `grid/graph.jac` defines persistent entities. The projection types are ready for Member 2/3 review; `get_grid_state()` and live derived metrics are Task 2/5 work, so these values are not yet served by the application.
+`shared/contracts.jac` defines the canonical `GraphState` projection using `SourceView`, `LoadView`, `LineView`, and `GridMetrics`. Status strings and `conducting` are server-derived fields for the dashboard. `grid/graph.jac` defines persistent entities. `grid/simulation.jac` provides `get_grid_state()`, `inject_fault(fault_id)`, and `reset_simulation()` as Jac server functions. The client entry point has not yet imported or called them.
 
 The graph-side fields and IDs should be ratified with the consumers before they implement against them. Recovery-plan and agent-event types remain Member 2's contract work.
+
+## Named fault scenarios and current-state readings
+
+These readings are **before recovery**. All switches keep their baseline positions. The Task 2 projection uses a conservative source-zone trip: if the unchanged demand reachable from a source exceeds its current capacity, that entire source zone is shown as unmet. This avoids reporting overloaded dispatch or pretending a transfer occurred. Task 3 will add allocation and routing; these figures are not recovery targets.
+
+| Fault ID | Deterministic change | Current served / unmet (kW) | Available capacity / actual dispatch (kW) | Tier 1 preserved |
+|---|---|---:|---:|---:|
+| `FAULT-SOURCE-A` | `SRC-A` capacity 120 → 50 kW | 100 / 105 | 205 / 100 | 45 / 105 kW |
+| `FAULT-LINE-A-H` | `LINE-A-H` physically faulted; switch stays closed | 145 / 60 | 275 / 145 | 45 / 105 kW |
+| `FAULT-INSUFFICIENT-BACKUP` | `SRC-A` 120 → 50 kW and `SRC-R` 60 → 30 kW | 100 / 105 | 175 / 100 | 45 / 105 kW |
+
+For the last case, `SRC-R` still dispatches 25 kW to its own loads, leaving only 5 kW spare. `SRC-B` has 20 kW spare. Their combined 25 kW spare is less than the 55 kW deficit between `SRC-A`'s unchanged 105 kW zone demand and its 50 kW capacity.
+
+`shed_kw` is zero in these readings because no deliberate recovery shedding has occurred. `unmet_kw` includes demand disconnected by a fault or the conservative pre-recovery trip. An active fault remains in `active_fault_ids` and counts as one scenario fault; a physical line fault also remains on its `LineView`.
+
+`inject_fault` accepts one of the three exact IDs. Repeating the same ID returns the unchanged state/revision. An unknown ID or a different fault before reset raises `ValueError` without mutation. `reset_simulation` rebuilds the baseline, clears the fault, and returns revision 0. A successful new injection increments the revision to 1. The graph projection fields and these reset semantics should be reviewed with Members 2 and 3 before their consumers depend on them.
