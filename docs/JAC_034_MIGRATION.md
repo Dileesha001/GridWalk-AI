@@ -7,7 +7,9 @@ The port changed the project kind to `web-app`, moved client and byLLM settings 
 Checks completed in Ubuntu 24.04 under WSL 2 with `jac --version` reporting 0.34.13:
 
 - `jac install` completed, including optional Python packages and npm dependencies.
-- `jac check . -n` passed all 29 Jac files.
+- `jac check . -n` passed all 38 Jac files after merging the latest dashboard and grid work from `dev`.
 - `jac build --client web` built the client bundle.
+
+The latest dashboard merge also required its event-handler lambdas to use 0.34.13 syntax and its browser helper to assign the module `glob` directly. Dashboard page metadata now lives under `[client.app_meta_data]`.
 
 These checks establish installation, compilation, and client bundling. The prior live Gemini proposal, browser inspection, and runtime milestone checks were performed under Jac 0.16.7. Repeat the relevant runtime checks under 0.34.13 as the team connects the remaining features. Historical milestone documents retain their original environment and results.

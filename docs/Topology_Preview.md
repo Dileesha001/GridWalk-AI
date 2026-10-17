@@ -1,5 +1,11 @@
 # Topology preview
 
+The notes below describe the original Step 5 renderer. The active dashboard now
+uses the healthy Figma console and Jac style dictionaries. Current verification,
+inspection controls, and fixed-fixture limitations are recorded in the
+[design review](Design_Review.md). The original renderer and layout tests remain
+available, including their handling of unknown bus IDs.
+
 Step 5 adds a read-only SVG topology with labeled sources, loads, physical lines,
 switches, and kW values. The component selector provides keyboard-accessible text
 inspection. It distinguishes capacity from dispatch, demand from service, and
