@@ -1,4 +1,8 @@
-"""Validate draft wire data at one boundary before constructing presentation objects."""
+"""Legacy preview decoding and Jac function envelope handling.
+
+The draft view fields below are not the canonical shared GraphState schema.
+Do not wire them to live graph responses before adapting to shared/contracts.jac.
+"""
 
 import from .models { SourceView, LoadView, LineView, MetricsView, GridView, EventView, RecoveryView }
 
@@ -59,7 +63,9 @@ def:pub unwrap(raw: any) -> any {
     data = object_value(raw);
     if "ok" in data {
         if not flag(data, "ok") { raise ValueError("The server rejected the operation. Refresh state before retrying."); }
-        return data["data"];
+        payload = object_value(data["data"]);
+        if "result" not in payload { raise ValueError("The Jac function response is missing data.result."); }
+        return payload["result"];
     }
     return data;
 }
